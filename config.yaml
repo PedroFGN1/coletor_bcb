@@ -1,0 +1,7 @@
+database:
+  type: sqlite
+  db_name: dados_bcb.db
+series_codes:
+  433: ipca_mensal
+  1: selic_diaria
+
