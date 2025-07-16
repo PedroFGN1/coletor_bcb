@@ -15,7 +15,7 @@ def process_series_data(df, series_code):
     df.columns = ['data', 'valor']
 
     # Garante que a coluna 'data' esteja no formato datetime
-    df['data'] = pd.to_datetime(df['data'])
+    df['data'] = pd.to_datetime(df['data'], format= '%Y-%m-%d', errors='coerce')
 
     return df
 
