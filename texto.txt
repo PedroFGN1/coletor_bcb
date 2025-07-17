@@ -1,0 +1,1 @@
+O foco desta fase, é construir o núcleo funcional da aplicação. O resultado será um programa de, linha de comando, robusto que automatiza a coleta, o processamento e o armazenamento de séries temporais do Banco Central em um banco de dados local (SQLite). Esta base sólida é essencial antes de adicionarmos qualquer interface gráfica.

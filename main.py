@@ -39,7 +39,7 @@ def main():
                 print(f"Última data encontrada para {series_name}: {last_date.strftime('%Y-%m-%d')}. Buscando a partir de {start_date.strftime('%Y-%m-%d')}")
             else:
                 start_date = datetime(1990, 1, 1) # Data de início padrão
-                print(f'Nenhum registro encontrado para {series_name}. Buscando desde {start_date.strftime("%Y-%m-%d")}')
+                print(f'Nenhum registro encontrado no banco de dados para {series_name}. Buscando desde {start_date.strftime("%Y-%m-%d")}')
 
             raw_data = fetch_bcb_series(code, start_date)
             processed_data = process_series_data(raw_data, code)
