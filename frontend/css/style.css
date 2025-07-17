@@ -33,7 +33,7 @@ body {
 .sidebar-header {
     padding: 2rem 1.5rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background: linear-gradient(135deg, #23ff75 0%, rgb(35, 148, 31) 100%);
+    background: linear-gradient(135deg, #23ff75 0%, #23941f 100%);
     color: white;
 }
 
@@ -72,7 +72,7 @@ body {
 }
 
 .menu-item.active .menu-link {
-    background: linear-gradient(135deg, #23ff75 0%, #21996c 100%);
+    background: linear-gradient(135deg, #23ff75 0%, #23941f 100%);
     color: white;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
