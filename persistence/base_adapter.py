@@ -36,3 +36,17 @@ class DatabaseAdapter(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_table_names(self) -> list[str]:
+        """
+        Retorna uma lista com os nomes das tabelas no banco de dados.
+        """
+        pass
+
+    @abstractmethod
+    def fetch_full_table_data(self, table_name: str) -> pd.DataFrame:
+        """
+        Retorna todos os dados de uma tabela específica como um DataFrame.
+        Se a tabela não existir, deve retornar um DataFrame vazio.
+        """
+        pass

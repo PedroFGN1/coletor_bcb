@@ -49,3 +49,18 @@ class SQLiteAdapter(DatabaseAdapter):
         except Exception as e:
             print(f"Erro ao salvar dados da série {series_name}: {e}")
 
+    def get_table_names(self) -> list[str]:
+        if not self.engine:
+            raise ConnectionError("Conexão com o banco de dados não estabelecida.")
+        inspector = inspect(self.engine)
+        return inspector.get_table_names()
+
+    def fetch_full_table_data(self, table_name: str) -> pd.DataFrame:
+        if not self.engine:
+            raise ConnectionError("Conexão com o banco de dados não estabelecida.")
+        
+        with self.engine.connect() as connection:
+            query = text(f"SELECT * FROM {table_name}")
+            df = pd.read_sql(query, connection)
+            return df
+        

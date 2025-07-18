@@ -8,6 +8,7 @@ import sys
 
 from modules.data_acquirer import fetch_bcb_series
 from modules.data_processor import process_series_data
+from modules.data_exporter import export_dataframe
 from persistence.sqlite_adapter import SQLiteAdapter
 
 # Inicializa o Eel
@@ -38,6 +39,92 @@ def start_data_collection():
     Executa em uma thread separada para não bloquear a UI.
     """
     threading.Thread(target=_run_data_collection).start()
+
+@eel.expose
+def get_series_list():
+    """
+    Retorna a lista de séries disponíveis no banco de dados.
+    """
+    config_path = get_base_path("config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+    except FileNotFoundError:
+        return []
+
+    db_config = config.get("database", {})
+    db_type = db_config.get("type")
+    db_name = db_config.get("db_name")
+
+    if db_type == "sqlite":
+        adapter = SQLiteAdapter(db_name)
+        adapter.connect()
+        try:
+            table_names = adapter.get_table_names()
+            return table_names
+        finally:
+            adapter.disconnect()
+    
+    return []
+
+@eel.expose
+def get_series_data(series_name: str):
+    """
+    Retorna os dados de uma série específica.
+    """
+    config_path = get_base_path("config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+    except FileNotFoundError:
+        return []
+
+    db_config = config.get("database", {})
+    db_type = db_config.get("type")
+    db_name = db_config.get("db_name")
+
+    if db_type == "sqlite":
+        adapter = SQLiteAdapter(db_name)
+        adapter.connect()
+        try:
+            df = adapter.fetch_full_table_data(series_name)
+            return df.to_dict('records')
+        finally:
+            adapter.disconnect()
+    
+    return []
+
+@eel.expose
+def export_series(series_name: str, export_format: str):
+    """
+    Exporta uma série para CSV ou Excel.
+    """
+    try:
+        config_path = get_base_path("config.yaml")
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+
+        db_config = config.get("database", {})
+        db_type = db_config.get("type")
+        db_name = db_config.get("db_name")
+
+        if db_type == "sqlite":
+            adapter = SQLiteAdapter(db_name)
+            adapter.connect()
+            try:
+                df = adapter.fetch_full_table_data(series_name)
+                if not df.empty:
+                    file_path = export_dataframe(df, export_format, series_name)
+                    return {'success': True, 'path': file_path}
+                else:
+                    return {'success': False, 'error': 'Nenhum dado encontrado para a série'}
+            finally:
+                adapter.disconnect()
+        
+        return {'success': False, 'error': 'Tipo de banco não suportado'}
+    
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
 
 def _run_data_collection():
     """

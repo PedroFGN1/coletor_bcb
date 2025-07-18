@@ -16,12 +16,12 @@ Este projeto implementa uma aplicação Python modular para coletar, processar e
 
 ```
 coletor_bcb/
-├── main.py                    # Ponto de entrada principal
+├── main.py                   # Ponto de entrada principal
 ├── config.yaml               # Arquivo de configuração
-├── requirements.txt           # Dependências Python
+├── requirements.txt          # Dependências Python
 ├── dados_bcb.db              # Banco de dados SQLite (gerado automaticamente)
 ├── README.md                 # Esta documentação
-├── RELATORIO_IMPLEMENTACAO.md # Relatório técnico detalhado
+├── Relatorio_Detalhado.md    # Relatório técnico detalhado
 ├── frontend/                 # Interface web
 │   ├── index.html            # Página principal
 │   ├── css/
@@ -31,7 +31,8 @@ coletor_bcb/
 ├── modules/                  # Módulos de negócio
 │   ├── __init__.py
 │   ├── data_acquirer.py      # Aquisição de dados da API
-│   └── data_processor.py     # Processamento de dados
+│   ├── data_processor.py     # Processamento de dados
+│   └── data_exporter.py      # Exportação de dados
 └── persistence/              # Camada de persistência
     ├── __init__.py
     ├── base_adapter.py       # Interface abstrata
@@ -47,10 +48,11 @@ coletor_bcb/
 
 ### 2. Instalação das Dependências
 
-Navegue até o diretório `coletor_bcb` e instale as dependências:
+Navegue até o diretório `coletor_bcb` e instale as dependências. Certifique-se de que `openpyxl` está incluído para a funcionalidade de exportação para Excel:
 
 ```bash
 pip install -r requirements.txt
+pip install openpyxl # Necessário para exportação para Excel
 ```
 
 ### 3. Configuração (config.yaml)
@@ -102,6 +104,14 @@ A interface principal oferece:
 2. **Área de Logs**: Exibe o progresso em tempo real
 3. **Botão "Limpar"**: Remove os logs da tela
 4. **Indicadores Visuais**: Feedback sobre o status da operação
+
+### Visualizar Dados
+
+Esta seção permite explorar e exportar as séries temporais já coletadas e armazenadas no banco de dados.
+
+1.  **Seleção de Série**: Utilize o dropdown "Série Temporal" para escolher uma das séries disponíveis no seu banco de dados. Ao selecionar, os dados da série serão carregados e exibidos em uma tabela interativa.
+2.  **Tabela Interativa**: Os dados são apresentados em uma tabela paginada, com funcionalidades de busca e ordenação, facilitadas pela integração da biblioteca DataTables.js. Isso permite navegar e encontrar informações específicas facilmente, mesmo em séries com muitos registros.
+3.  **Botões de Exportação**: Após selecionar uma série e visualizar seus dados, os botões "Exportar CSV" e "Exportar Excel" serão habilitados. Clique no formato desejado para salvar os dados da série em um arquivo na sua pasta de Downloads (ou diretório de trabalho).
 
 ### Fluxo de Operação
 
