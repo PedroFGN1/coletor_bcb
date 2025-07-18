@@ -77,6 +77,21 @@ python main.py
 
 A interface web será aberta automaticamente no navegador padrão. Se isso não acontecer, acesse manualmente: `http://localhost:8000`
 
+### 5. Criação de Executável .exe
+
+Para criar um executável `.exe`, execute este comando no terminal python no diretório raiz da aplicação.
+
+```bash
+pyinstaller --noconsole --onefile --icon="assets/icon.ico" --add-data="frontend;frontend" --add-data="config.yaml;." --name="ColetorBCB" main.py
+```
+
+- `--noconsole`: este comando impede que a janela preta de terminal apareça por trás da janela da aplicação.
+- `--onefile`: Cria um único arquivo `.exe`.
+- `--icon="assets/icon.ico"`: Associa o ícone ao executável.
+- `--add-data="frontend;frontend"`: Comando para aplicações Eel, inclui arquivos HTML, CSS e JS no diretório raiz do executável. 
+- `--add-data="config.yaml;."`: Inclui o arquivo de configuração `config.yaml` no diretório raiz do executável.
+- `--name="ColetorBCB"`: Define o nome do arquivo de saída.
+
 ## Usando a Interface Web
 
 ### Painel de Controle
