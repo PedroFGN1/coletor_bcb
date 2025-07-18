@@ -200,4 +200,4 @@ Em caso de falhas temporárias:
 ## Licença e Suporte
 
 Este projeto foi desenvolvido como uma ferramenta de código aberto para facilitar o acesso aos dados do Banco Central do Brasil.
-# 👨‍💻 Autor: Pedro Ferreira Galvão Neto
+## 👨‍💻 Autor: Pedro Ferreira Galvão Neto

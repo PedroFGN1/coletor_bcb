@@ -13,20 +13,16 @@ from persistence.sqlite_adapter import SQLiteAdapter
 # Inicializa o Eel
 eel.init('frontend')
 
-def get_base_path():
+def get_base_path(path):
     """Retorna o caminho base para encontrar os arquivos de recurso."""
     if getattr(sys, 'frozen', False):
         # Se o programa estiver 'congelado' (rodando como .exe)
-        # O caminho base é o diretório temporário _MEIPASS
-        # Mas os arquivos de dados como config.yaml e o banco de dados
-        # devem estar ao lado do .exe. Então usamos o diretório do executável.
-        return os.path.dirname(sys.executable)
+        # o caminho base é o diretório temporário _MEIPASS
+        return os.path.join(sys._MEIPASS, path)
     else:
         # Se estiver rodando como script .py normal
         # O caminho base é o diretório onde o script está
-        return os.path.dirname(os.path.abspath(__file__))
-
-BASE_PATH = get_base_path()
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
 
 def send_log_to_frontend(message):
     """
@@ -49,12 +45,12 @@ def _run_data_collection():
     """
     send_log_to_frontend("Iniciando processo de coleta de dados...")
     config = {}
-    config_path = os.path.join(BASE_PATH, "config.yaml")
+    config_path = get_base_path("config.yaml")
     try:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
     except FileNotFoundError:
-        send_log_to_frontend("Erro: Arquivo config.yaml não encontrado em {config_path}.")
+        send_log_to_frontend(f"Erro: Arquivo config.yaml não encontrado em {config_path}.")
         eel.collection_finished()()
         return
 

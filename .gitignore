@@ -2,3 +2,7 @@ dados_bcb.db
 .conda
 .venv
 /Relatórios
+/dist
+/build
+/__pycache__
+ColetorBCB.spec
