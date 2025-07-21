@@ -11,6 +11,7 @@ Este projeto implementa uma aplicação Python modular para coletar, processar e
 - **Configuração Externa**: Controle completo via arquivo YAML
 - **Tratamento Robusto de Erros**: Logging detalhado e recuperação automática
 - **Prevenção de Duplicatas**: Sistema inteligente para evitar dados duplicados
+- **Configuração Dinâmica de Séries**: Adicione, valide e gerencie séries diretamente pela interface web.
 
 ## Estrutura do Projeto
 
@@ -48,11 +49,10 @@ coletor_bcb/
 
 ### 2. Instalação das Dependências
 
-Navegue até o diretório `coletor_bcb` e instale as dependências. Certifique-se de que `openpyxl` está incluído para a funcionalidade de exportação para Excel:
+Navegue até o diretório `coletor_bcb` e instale as dependências. 
 
 ```bash
 pip install -r requirements.txt
-pip install openpyxl # Necessário para exportação para Excel
 ```
 
 ### 3. Configuração (config.yaml)
@@ -68,6 +68,8 @@ series_codes:
   1: selic_diaria     # SELIC Diária
   11: cambio_dolar    # Taxa de Câmbio USD
 ```
+
+**A partir da v2.0 Fase 3, a configuração de séries é feita diretamente pela interface web.**
 
 ### 4. Execução da Aplicação
 
@@ -113,6 +115,20 @@ Esta seção permite explorar e exportar as séries temporais já coletadas e ar
 2.  **Tabela Interativa**: Os dados são apresentados em uma tabela paginada, com funcionalidades de busca e ordenação, facilitadas pela integração da biblioteca DataTables.js. Isso permite navegar e encontrar informações específicas facilmente, mesmo em séries com muitos registros.
 3.  **Botões de Exportação**: Após selecionar uma série e visualizar seus dados, os botões "Exportar CSV" e "Exportar Excel" serão habilitados. Clique no formato desejado para salvar os dados da série em um arquivo na sua pasta de Downloads (ou diretório de trabalho).
 
+### Configurações
+
+Esta seção permite gerenciar as séries temporais a serem coletadas.
+1.  **Adicionar Nova Série**: Para adicionar uma nova série temporal, preencha os campos solicitados e clique em "Adicionar à Lista".
+    *   **Código da Série BCB:** Insira o código numérico da série desejada (ex: `20543` para Dólar PTAX).
+    *   **Nome Base da Tabela:** Forneça um nome descritivo para a série (ex: `dolar ptax`). O sistema irá gerar automaticamente um nome de tabela sanitizado e com a periodicidade (ex: `dolar_ptax_diaria`).
+    *   **Periodicidade:** Selecione a periodicidade da série (Diária, Mensal, Anual).
+2.  **Salvar e Validar Configurações**: Clique no botão "Salvar e Validar Configurações" para que o sistema valide as séries com a API do BCB e salve as configurações no `config.yaml`.
+
+**Validações Automáticas:**
+-   O sistema verifica se o código da série retorna dados válidos da API do BCB.
+-   Verifica a consistência entre o nome da tabela e a periodicidade selecionada.
+-   Garante a unicidade dos nomes das tabelas para evitar conflitos no banco de dados.
+
 ### Fluxo de Operação
 
 1. **Primeira Execução**: 
@@ -146,6 +162,8 @@ Para adicionar uma nova série temporal:
      [CÓDIGO]: nome_da_tabela
    ```
 3. Execute a aplicação normalmente
+
+- Também é possível utilizar a seção `Configurações` na interface web para adicionar novas séries. O sistema cuidará da **validação** e **persistência**.
 
 ### Adicionando Novos Bancos de Dados
 

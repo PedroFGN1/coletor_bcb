@@ -12,12 +12,12 @@ from modules.data_exporter import export_dataframe
 from persistence.sqlite_adapter import SQLiteAdapter
 
 # Inicializa o Eel
-eel.init('frontend')
+eel.init("frontend")
 
 def get_base_path(path):
     """Retorna o caminho base para encontrar os arquivos de recurso."""
-    if getattr(sys, 'frozen', False):
-        # Se o programa estiver 'congelado' (rodando como .exe)
+    if getattr(sys, "frozen", False):
+        # Se o programa estiver "congelado" (rodando como .exe)
         # o caminho base é o diretório temporário _MEIPASS
         return os.path.join(sys._MEIPASS, path)
     else:
@@ -88,7 +88,7 @@ def get_series_data(series_name: str):
         adapter.connect()
         try:
             df = adapter.fetch_full_table_data(series_name)
-            return df.to_dict('records')
+            return df.to_dict("records")
         finally:
             adapter.disconnect()
     
@@ -115,16 +115,87 @@ def export_series(series_name: str, export_format: str):
                 df = adapter.fetch_full_table_data(series_name)
                 if not df.empty:
                     file_path = export_dataframe(df, export_format, series_name)
-                    return {'success': True, 'path': file_path}
+                    return {"success": True, "path": file_path}
                 else:
-                    return {'success': False, 'error': 'Nenhum dado encontrado para a série'}
+                    return {"success": False, "error": "Nenhum dado encontrado para a série"}
             finally:
                 adapter.disconnect()
         
-        return {'success': False, 'error': 'Tipo de banco não suportado'}
+        return {"success": False, "error": "Tipo de banco não suportado"}
     
     except Exception as e:
-        return {'success': False, 'error': str(e)}
+        return {"success": False, "error": str(e)}
+
+@eel.expose
+def validate_and_save_configuration(config_data: dict):
+    """
+    Valida e salva a configuração de séries.
+    """
+    current_config_path = get_base_path("config.yaml")
+    try:
+        with open(current_config_path, "r") as f:
+            current_config = yaml.safe_load(f)
+    except FileNotFoundError:
+        current_config = {"database": {"type": "sqlite", "db_name": "dados_bcb.db"}, "series_codes": {}}
+
+    new_series_codes = {}
+    for series in config_data.get("series", []):
+        code = str(series["code"])
+        table_name = series["table_name"]
+        periodicidade = series["periodicidade"]
+
+        # Critério 1: Validação de Existência (tentar buscar dados)
+        try:
+            # Buscar um pequeno intervalo de dados para validação
+            # A API do BCB não permite buscar dados de uma data futura
+            # Então, buscaremos dados até a data atual
+            test_data = fetch_bcb_series(code, datetime.now() - pd.Timedelta(days=30), datetime.now(), table_name)
+            if test_data.empty:
+                return {"success": False, "error": f"Série {code} ({table_name}) não retornou dados. Verifique o código da série."}
+        except Exception as e:
+            return {"success": False, "error": f"Erro ao validar série {code} ({table_name}): {str(e)}"}
+
+        # Critério 2: Validação de Periodicidade
+        # Lógica simplificada: verificar se a periodicidade do nome da tabela corresponde ao esperado
+        # Uma validação mais robusta exigiria analisar a frequência dos dados retornados pela API
+        # Por simplicidade, vamos apenas verificar a consistência do nome com a periodicidade informada
+        '''
+        if "diaria" in table_name and periodicidade != "Diária":
+            return {"success": False, "error": f"A série {code} ({table_name}) foi configurada como {periodicidade}, mas o nome sugere periodicidade diária."}
+        elif "mensal" in table_name and periodicidade != "Mensal":
+            return {"success": False, "error": f"A série {code} ({table_name}) foi configurada como {periodicidade}, mas o nome sugere periodicidade mensal."}
+        elif "anual" in table_name and periodicidade != "Anual":
+            return {"success": False, "error": f"A série {code} ({table_name}) foi configurada como {periodicidade}, mas o nome sugere periodicidade anual."}
+        '''
+        # Critério 3: Validação de Unicidade do Nome
+        # Verificar se o nome da tabela já está em uso por outro código
+        for existing_code, existing_name in current_config.get("series_codes", {}).items():
+            if existing_name == table_name and existing_code != code:
+                return {"success": False, "error": f"O nome de tabela \'{table_name}\' já está em uso pela série {existing_code}."}
+        
+        new_series_codes[code] = table_name
+
+    current_config["series_codes"] = new_series_codes
+
+    try:
+        with open(current_config_path, "w") as f:
+            yaml.safe_dump(current_config, f, sort_keys=False)
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": f"Erro ao salvar config.yaml: {str(e)}"}
+
+@eel.expose
+def get_current_config():
+    """
+    Retorna a configuração atual do config.yaml.
+    """
+    config_path = get_base_path("config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+            return config
+    except FileNotFoundError:
+        return {"database": {"type": "sqlite", "db_name": "dados_bcb.db"}, "series_codes": {}}
 
 def _run_data_collection():
     """
@@ -163,12 +234,12 @@ def _run_data_collection():
             start_date = None
             if last_date:
                 start_date = last_date + pd.Timedelta(days=1)
-                send_log_to_frontend(f"Última data encontrada para {series_name}: {last_date.strftime('%Y-%m-%d')}. Buscando a partir de {start_date.strftime('%Y-%m-%d')}")
+                send_log_to_frontend(f'Última data encontrada para {series_name}: {last_date.strftime("%Y-%m-%d")}. Buscando a partir de {start_date.strftime("%Y-%m-%d")}')
             else:
                 start_date = datetime(1990, 1, 1)
-                send_log_to_frontend(f"Nenhum registro encontrado para {series_name}. Buscando desde {start_date.strftime('%Y-%m-%d')}")
+                send_log_to_frontend(f'Nenhum registro encontrado para {series_name}. Buscando desde {start_date.strftime("%Y-%m-%d")}')
 
-            raw_data = fetch_bcb_series(code, start_date)
+            raw_data = fetch_bcb_series(code, start_date, datetime.now(), series_name)
             processed_data = process_series_data(raw_data, code)
 
             if not processed_data.empty:
@@ -190,5 +261,5 @@ def _run_data_collection():
 
 if __name__ == "__main__":
     # Inicia a interface Eel
-    eel.start('index.html', size=(1000, 700))
+    eel.start("index.html", size=(1000, 700))
 

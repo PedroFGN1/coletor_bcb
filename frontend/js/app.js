@@ -1,274 +1,251 @@
-// Elementos DOM
-const startCollectionBtn = document.getElementById("start-collection-btn");
-const clearLogsBtn = document.getElementById("clear-logs-btn");
-const logContainer = document.getElementById("log-container");
-const loadingOverlay = document.getElementById("loading-overlay");
+document.addEventListener("DOMContentLoaded", function () {
+    // Elementos DOM
+    const menuItems = document.querySelectorAll(".menu-item");
+    const contentSections = document.querySelectorAll(".content-section");
+    const startCollectionBtn = document.getElementById("start-collection-btn");
+    const clearLogsBtn = document.getElementById("clear-logs-btn");
+    const logContainer = document.getElementById("log-container");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const seriesSelect = document.getElementById("series-select");
+    const exportCsvBtn = document.getElementById("export-csv-btn");
+    const exportExcelBtn = document.getElementById("export-excel-btn");
+    const dataTableElement = document.getElementById("data-table");
+    const configuredSeriesTableBody = document.querySelector("#configured-series-table tbody");
+    const addSeriesToListBtn = document.getElementById("add-series-to-list-btn");
+    const saveConfigurationsBtn = document.getElementById("save-configurations-btn");
+    const seriesCodeInput = document.getElementById("series-code-input");
+    const baseNameInput = document.getElementById("base-name-input");
+    const periodicitySelect = document.getElementById("periodicity-select");
+    const generatedTableNameInput = document.getElementById("generated-table-name");
+    const addSeriesErrorMessage = document.getElementById("add-series-error-message");
+    const saveConfigMessage = document.getElementById("save-config-message");
 
-const seriesSelect = document.getElementById("series-select");
-const exportCsvBtn = document.getElementById("export-csv-btn");
-const exportExcelBtn = document.getElementById("export-excel-btn");
+    // Estado da aplicação
+    let isCollecting = false;
+    let dataTable;
 
-// Elementos de navegação
-const menuItems = document.querySelectorAll(".sidebar-menu .menu-item");
-const contentSections = document.querySelectorAll(".main-content .content-section");
-
-// Estado da aplicação
-let isCollecting = false;
-let currentDataTable = null; // Para a instância do DataTables
-let currentSeriesName = null;
-
-// Inicialização
-document.addEventListener("DOMContentLoaded", function() {
+    // Inicialização
     setupEventListeners();
     addLog("Sistema inicializado com sucesso.", "info");
-    loadSeriesList(); // Carrega a lista de séries ao iniciar
-});
 
-// Configuração dos event listeners
-function setupEventListeners() {
-    startCollectionBtn.addEventListener("click", handleStartCollection);
-    clearLogsBtn.addEventListener("click", handleClearLogs);
-    seriesSelect.addEventListener("change", handleSeriesSelectChange);
-    exportCsvBtn.addEventListener("click", () => handleExport("csv"));
-    exportExcelBtn.addEventListener("click", () => handleExport("excel"));
-
-    menuItems.forEach(item => {
-        item.addEventListener("click", handleMenuItemClick);
-    });
-}
-
-// Manipulador do botão de iniciar coleta
-function handleStartCollection() {
-    if (isCollecting) return;
-    
-    setCollectionState(true);
-    addLog("Iniciando processo de coleta...", "info");
-    
-    // Chama a função Python através do Eel
-    eel.start_data_collection();
-}
-
-// Manipulador do botão de limpar logs
-function handleClearLogs() {
-    logContainer.innerHTML = "";
-    addLog("Logs limpos.", "info");
-}
-
-// Gerencia o estado da coleta
-function setCollectionState(collecting) {
-    isCollecting = collecting;
-    
-    if (collecting) {
-        startCollectionBtn.disabled = true;
-        startCollectionBtn.innerHTML = 
-            `<i class="fas fa-spinner fa-spin"></i> Coletando...`;
-        loadingOverlay.classList.remove("hidden");
-    } else {
-        startCollectionBtn.disabled = false;
-        startCollectionBtn.innerHTML = 
-            `<i class="fas fa-download"></i> Iniciar Coleta`;
-        loadingOverlay.classList.add("hidden");
-    }
-}
-
-// Função para adicionar logs (chamada pelo Python)
-eel.expose(add_log);
-function add_log(message, type = "info") {
-    addLog(message, type);
-}
-
-// Função para indicar que a coleta terminou (chamada pelo Python)
-eel.expose(collection_finished);
-function collection_finished() {
-    setCollectionState(false);
-    addLog("Processo de coleta finalizado.", "info");
-    loadSeriesList(); // Recarrega a lista de séries após a coleta
-}
-
-// Função auxiliar para adicionar logs
-function addLog(message, type = "info") {
-    const logEntry = document.createElement("div");
-    logEntry.className = `log-entry ${type}`;
-    
-    const timestamp = new Date().toLocaleTimeString("pt-BR");
-    logEntry.innerHTML = `
-        <span class="timestamp">[${timestamp}]</span>
-        <span class="message">${message}</span>
-    `;
-    
-    logContainer.appendChild(logEntry);
-    
-    // Auto-scroll para o final
-    logContainer.scrollTop = logContainer.scrollHeight;
-    
-    // Animação de entrada
-    logEntry.style.opacity = "0";
-    logEntry.style.transform = "translateY(10px)";
-    
-    setTimeout(() => {
-        logEntry.style.transition = "all 0.3s ease";
-        logEntry.style.opacity = "1";
-        logEntry.style.transform = "translateY(0)";
-    }, 10);
-}
-
-// Função para determinar o tipo de log baseado no conteúdo
-function getLogType(message) {
-    const lowerMessage = message.toLowerCase();
-    
-    if (lowerMessage.includes("erro") || lowerMessage.includes("error")) {
-        return "error";
-    } else if (lowerMessage.includes("aviso") || lowerMessage.includes("warning")) {
-        return "warning";
-    } else if (lowerMessage.includes("sucesso") || lowerMessage.includes("finalizado") || lowerMessage.includes("salvos")) {
-        return "info";
-    } else {
-        return "info";
-    }
-}
-
-// Sobrescreve a função add_log para usar detecção automática de tipo
-const originalAddLog = add_log;
-add_log = function(message, type) {
-    if (!type) {
-        type = getLogType(message);
-    }
-    originalAddLog(message, type);
-};
-
-// Tratamento de erros globais
-window.addEventListener("error", function(e) {
-    addLog(`Erro na interface: ${e.message}`, "error");
-});
-
-// Previne o fechamento acidental durante a coleta
-window.addEventListener("beforeunload", function(e) {
-    if (isCollecting) {
-        e.preventDefault();
-        e.returnValue = "Uma coleta está em andamento. Tem certeza que deseja sair?";
-        return e.returnValue;
-    }
-});
-
-// --- Novas Funções para Visualização e Exportação ---
-
-// Manipulador de clique nos itens do menu lateral
-function handleMenuItemClick(event) {
-    event.preventDefault();
-    const clickedItem = event.currentTarget;
-    const targetSectionId = clickedItem.dataset.section;
-
-    // Remove 'active' de todos os itens do menu e adiciona ao clicado
-    menuItems.forEach(item => item.classList.remove("active"));
-    clickedItem.classList.add("active");
-
-    // Esconde todas as seções de conteúdo e mostra a seção alvo
-    contentSections.forEach(section => section.classList.add("hidden"));
-    document.getElementById(`${targetSectionId}-section`).classList.remove("hidden");
-
-    // Se for a seção de dados, recarrega a lista de séries
-    if (targetSectionId === "data-view") {
-        loadSeriesList();
-    }
-}
-
-// Carrega a lista de séries do backend e popula o dropdown
-async function loadSeriesList() {
-    try {
-        const seriesList = await eel.get_series_list()();
-        seriesSelect.innerHTML = 
-            `<option value="">Selecione uma série</option>`; // Limpa e adiciona opção padrão
-        seriesList.forEach(seriesName => {
-            const option = document.createElement("option");
-            option.value = seriesName;
-            option.textContent = seriesName;
-            seriesSelect.appendChild(option);
+    // Configuração dos event listeners
+    function setupEventListeners() {
+        menuItems.forEach(item => {
+            item.addEventListener("click", () => handleMenuClick(item));
         });
-        // Desabilita botões de exportação até que uma série seja selecionada
-        exportCsvBtn.disabled = true;
-        exportExcelBtn.disabled = true;
-    } catch (error) {
-        addLog(`Erro ao carregar lista de séries: ${error.message}`, "error");
-    }
-}
 
-// Manipulador de mudança de seleção no dropdown de séries
-async function handleSeriesSelectChange() {
-    currentSeriesName = seriesSelect.value;
-    if (currentSeriesName) {
-        addLog(`Carregando dados para a série: ${currentSeriesName}...`, "info");
-        exportCsvBtn.disabled = true;
-        exportExcelBtn.disabled = true;
-        
-        // Destruir tabela existente se houver
-        if (currentDataTable) {
-            currentDataTable.destroy();
-            document.getElementById("data-table").getElementsByTagName("tbody")[0].innerHTML = "";
-        }
+        startCollectionBtn.addEventListener("click", handleStartCollection);
+        clearLogsBtn.addEventListener("click", handleClearLogs);
+        seriesSelect.addEventListener("change", handleSeriesSelectChange);
+        exportCsvBtn.addEventListener("click", () => handleExport("csv"));
+        exportExcelBtn.addEventListener("click", () => handleExport("excel"));
+        addSeriesToListBtn.addEventListener("click", handleAddSeriesToList);
+        saveConfigurationsBtn.addEventListener("click", handleSaveConfigurations);
 
-        try {
-            const data = await eel.get_series_data(currentSeriesName)();
-            if (data.length > 0) {
-                // Inicializa DataTables com os novos dados
-                currentDataTable = $("#data-table").DataTable({
-                    data: data,
-                    columns: [
-                        { data: "data", title: "Data" },
-                        { data: "valor", title: "Valor" }
-                    ],
-                    destroy: true, // Permite reinicializar a tabela
-                    paging: true,
-                    searching: true,
-                    ordering: true,
-                    info: true,
-                    responsive: true
-                });
-                addLog(`Dados da série ${currentSeriesName} carregados com sucesso.`, "info");
-                exportCsvBtn.disabled = false;
-                exportExcelBtn.disabled = false;
-            } else {
-                addLog(`Nenhum dado encontrado para a série ${currentSeriesName}.`, "warning");
-            }
-        } catch (error) {
-            addLog(`Erro ao carregar dados da série ${currentSeriesName}: ${error.message}`, "error");
-        }
-    } else {
-        // Se nenhuma série for selecionada, desabilita botões e limpa tabela
-        exportCsvBtn.disabled = true;
-        exportExcelBtn.disabled = true;
-        if (currentDataTable) {
-            currentDataTable.destroy();
-            document.getElementById("data-table").getElementsByTagName("tbody")[0].innerHTML = "";
-        }
-    }
-}
-
-// Manipulador de exportação
-async function handleExport(format) {
-    if (!currentSeriesName) {
-        addLog("Selecione uma série para exportar.", "warning");
-        return;
+        [baseNameInput, periodicitySelect].forEach(el => {
+            el.addEventListener("input", updateGeneratedTableName);
+        });
     }
 
-    addLog(`Exportando série ${currentSeriesName} para ${format.toUpperCase()}...`, "info");
-    try {
-        const result = await eel.export_series(currentSeriesName, format)();
-        if (result.success) {
-            addLog(`Sucesso! Arquivo salvo em: ${result.path}`, "info");
-            alert(`Arquivo salvo em: ${result.path}`, "info");
-            if (format === "csv") {
-                window.location.href = result.path;
-            } else if (format === "excel") {
-                window.open(result.path, "_blank");
-            }
+    // --- Lógica de Navegação ---
+    function handleMenuClick(clickedItem) {
+        menuItems.forEach(item => item.classList.remove("active"));
+        clickedItem.classList.add("active");
+
+        const sectionId = clickedItem.dataset.section;
+        contentSections.forEach(section => {
+            section.classList.toggle("active", section.id === sectionId);
+        });
+
+        if (sectionId === "data-view-section") {
+            loadSeriesList();
+        } else if (sectionId === "settings-section") {
+            loadCurrentConfigurations();
+        }
+    }
+
+    // --- Lógica do Painel de Controle ---
+    function handleStartCollection() {
+        if (isCollecting) return;
+        setCollectionState(true);
+        addLog("Iniciando processo de coleta...", "info");
+        eel.start_data_collection();
+    }
+
+    function handleClearLogs() {
+        logContainer.innerHTML = "";
+        addLog("Logs limpos.", "info");
+    }
+
+    function setCollectionState(collecting) {
+        isCollecting = collecting;
+        loadingOverlay.classList.toggle("hidden", !collecting);
+        startCollectionBtn.disabled = collecting;
+        startCollectionBtn.innerHTML = collecting ? `<i class="fas fa-spinner fa-spin"></i> Coletando...` : `<i class="fas fa-download"></i> Iniciar Coleta`;
+    }
+
+    // --- Lógica de Visualização de Dados ---
+    async function loadSeriesList() {
+        const seriesList = await eel.get_series_list()();
+        seriesSelect.innerHTML = "<option value=''>Selecione uma série</option>";
+        seriesList.forEach(series => {
+            const option = new Option(series, series);
+            seriesSelect.add(option);
+        });
+    }
+
+    async function handleSeriesSelectChange() {
+        const seriesName = seriesSelect.value;
+        if (!seriesName) {
+            if (dataTable) dataTable.clear().draw();
+            exportCsvBtn.disabled = true;
+            exportExcelBtn.disabled = true;
+            return;
+        }
+
+        const seriesData = await eel.get_series_data(seriesName)();
+        if (dataTable) {
+            dataTable.clear();
+            dataTable.rows.add(seriesData.map(row => [row.data, row.valor]));
+            dataTable.draw();
         } else {
-            addLog(`Erro ao exportar: ${result.error}`, "error");
-            alert(`Erro ao exportar: ${result.error}`, "error");
+            dataTable = $(dataTableElement).DataTable({
+                data: seriesData.map(row => [row.data, row.valor]),
+                columns: [{ title: "Data" }, { title: "Valor" }],
+                responsive: true,
+                language: { url: "//cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json" }
+            });
         }
-    } catch (error) {
-        addLog(`Erro inesperado durante a exportação: ${error.message}`, "error");
-        alert(`Erro inesperado: ${error.message}`, "error");
+        exportCsvBtn.disabled = false;
+        exportExcelBtn.disabled = false;
     }
-}
+
+    async function handleExport(format) {
+        const seriesName = seriesSelect.value;
+        if (!seriesName) return;
+
+        addLog(`Exportando ${seriesName} para ${format.toUpperCase()}...`, "info");
+        const result = await eel.export_series(seriesName, format)();
+        if (result.success) {
+            addLog(`Arquivo salvo em: ${result.path}`, "success");
+        } else {
+            addLog(`Erro na exportação: ${result.error}`, "error");
+        }
+    }
+
+    // --- Lógica de Configurações ---
+    async function loadCurrentConfigurations() {
+        const config = await eel.get_current_config()();
+        configuredSeriesTableBody.innerHTML = "";
+        if (config && config.series_codes) {
+            for (const [code, name] of Object.entries(config.series_codes)) {
+                const periodicity = name.split("_").pop();
+                addSeriesRowToTable(code, name, periodicity, false);
+            }
+        }
+    }
+
+    function handleAddSeriesToList() {
+        const code = seriesCodeInput.value;
+        const baseName = baseNameInput.value;
+        const periodicity = periodicitySelect.value;
+        const generatedName = generatedTableNameInput.value;
+
+        addSeriesErrorMessage.textContent = "";
+
+        if (!code || !baseName || !periodicity) {
+            addSeriesErrorMessage.textContent = "Todos os campos são obrigatórios.";
+            return;
+        }
+
+        const periodKeywords = ["diaria", "mensal", "anual"];
+        if (periodKeywords.some(p => baseName.toLowerCase().includes(p))) {
+            addSeriesErrorMessage.textContent = "O Nome Base não deve conter palavras de período.";
+            return;
+        }
+
+        addSeriesRowToTable(code, generatedName, periodicity, true);
+        seriesCodeInput.value = "";
+        baseNameInput.value = "";
+        periodicitySelect.value = "";
+        generatedTableNameInput.value = "";
+    }
+
+    function addSeriesRowToTable(code, tableName, periodicity, isNew) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${code}</td>
+            <td>${tableName}</td>
+            <td>${periodicity}</td>
+            <td><button class="btn btn-danger btn-sm remove-series-btn">Remover</button></td>
+        `;
+        if (isNew) row.classList.add("new-series");
+
+        row.querySelector(".remove-series-btn").addEventListener("click", () => {
+            row.remove();
+        });
+
+        configuredSeriesTableBody.appendChild(row);
+    }
+
+    function updateGeneratedTableName() {
+        const baseName = baseNameInput.value;
+        const periodicity = periodicitySelect.value;
+
+        if (!baseName || !periodicity) {
+            generatedTableNameInput.value = "";
+            return;
+        }
+
+        const sanitizedBase = baseName.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        generatedTableNameInput.value = `${sanitizedBase}_${periodicity.toLowerCase()}`;
+    }
+
+    async function handleSaveConfigurations() {
+        const rows = configuredSeriesTableBody.querySelectorAll("tr");
+        const configData = { series: [] };
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("td");
+            configData.series.push({
+                code: cells[0].textContent,
+                table_name: cells[1].textContent,
+                periodicidade: cells[2].textContent
+            });
+        });
+
+        saveConfigMessage.textContent = "Validando e salvando...";
+        const result = await eel.validate_and_save_configuration(configData)();
+
+        if (result.success) {
+            saveConfigMessage.textContent = "Configurações salvas com sucesso!";
+            saveConfigMessage.className = "info-message success";
+            setTimeout(() => { saveConfigMessage.textContent = ""; }, 3000);
+        } else {
+            saveConfigMessage.textContent = `Erro: ${result.error}`;
+            saveConfigMessage.className = "info-message error";
+        }
+    }
+
+    // --- Funções Expostas pelo Eel ---
+    eel.expose(add_log);
+    function add_log(message, type = "info") {
+        const logEntry = document.createElement("div");
+        logEntry.className = `log-entry ${type}`;
+        const timestamp = new Date().toLocaleTimeString("pt-BR");
+        logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="message">${message}</span>`;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    eel.expose(collection_finished);
+    function collection_finished() {
+        setCollectionState(false);
+        addLog("Processo de coleta finalizado.", "info");
+        if (document.getElementById("data-view-section").classList.contains("active")) {
+            loadSeriesList();
+        }
+    }
+});
 
 
