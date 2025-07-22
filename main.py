@@ -158,15 +158,7 @@ def validate_and_save_configuration(config_data: dict):
         # Critério 2: Validação de Periodicidade
         # Lógica simplificada: verificar se a periodicidade do nome da tabela corresponde ao esperado
         # Uma validação mais robusta exigiria analisar a frequência dos dados retornados pela API
-        # Por simplicidade, vamos apenas verificar a consistência do nome com a periodicidade informada
-        '''
-        if "diaria" in table_name and periodicidade != "Diária":
-            return {"success": False, "error": f"A série {code} ({table_name}) foi configurada como {periodicidade}, mas o nome sugere periodicidade diária."}
-        elif "mensal" in table_name and periodicidade != "Mensal":
-            return {"success": False, "error": f"A série {code} ({table_name}) foi configurada como {periodicidade}, mas o nome sugere periodicidade mensal."}
-        elif "anual" in table_name and periodicidade != "Anual":
-            return {"success": False, "error": f"A série {code} ({table_name}) foi configurada como {periodicidade}, mas o nome sugere periodicidade anual."}
-        '''
+    
         # Critério 3: Validação de Unicidade do Nome
         # Verificar se o nome da tabela já está em uso por outro código
         for existing_code, existing_name in current_config.get("series_codes", {}).items():
