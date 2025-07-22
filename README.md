@@ -22,7 +22,7 @@ coletor_bcb/
 ├── requirements.txt          # Dependências Python
 ├── dados_bcb.db              # Banco de dados SQLite (gerado automaticamente)
 ├── README.md                 # Esta documentação
-├── Relatorio_Detalhado.md    # Relatório técnico detalhado
+├── Documentação Técnica.md    # Arquitetura, Fluxo de Operação e Guia de Instalação
 ├── frontend/                 # Interface web
 │   ├── index.html            # Página principal
 │   ├── css/
