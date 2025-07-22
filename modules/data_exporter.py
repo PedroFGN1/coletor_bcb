@@ -24,8 +24,10 @@ def export_dataframe(df: pd.DataFrame, file_format: str, table_name: str) -> str
         downloads_dir = os.getcwd()
     
     # Criar nome do arquivo com timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d")
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     
+    df['data'] = pd.to_datetime(df['data']).dt.strftime('%d/%m/%Y')
+
     if file_format.lower() == 'csv':
         filename = f"dados_{table_name}_{timestamp}.csv"
         filepath = os.path.join(downloads_dir, filename)

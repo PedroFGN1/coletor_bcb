@@ -273,6 +273,10 @@ def _run_data_collection():
                     send_log_to_frontend(f"Nenhum novo registro para {series_name} desde a última atualização.")
             else:
                 send_log_to_frontend(f"Nenhum dado retornado da API para a série {series_name}.")
+    except Exception as e:
+        send_log_to_frontend(f"Erro durante a coleta de dados: {str(e)}")
+        eel.collection_finished()()
+        return
 
     finally:
         adapter.disconnect()
