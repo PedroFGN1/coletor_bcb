@@ -10,6 +10,7 @@ def fetch_bcb_series(code, start_date=None, end_date=None, table_name=""):
     all_data = pd.DataFrame()
     current_start_date = start_date if start_date else datetime(1900, 1, 1)
     current_end_date = end_date if end_date else datetime.now()
+    is_daily_series = False
 
     if "diaria" in table_name:
         # Para séries diárias, buscar em chunks de 10 anos

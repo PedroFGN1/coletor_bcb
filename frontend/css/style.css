@@ -457,6 +457,43 @@ body {
     border: 1px solid #28a745;
 }
 
+/* Feedback visual para novas séries */
+.new-series-row {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    color: #007bff;
+    font-weight: bold;
+    border-left: 4px solid #007bff;
+}
+
+/* Notificações condicionais - ocultas por padrão */
+#add-series-error-message,
+#save-config-message {
+    display: none;
+}
+
+#add-series-error-message.visible,
+#save-config-message.visible {
+    display: block;
+}
+
+#add-series-error-message.error {
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid #dc3545;
+}
+
+#save-config-message.success {
+    color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+    border: 1px solid #28a745;
+}
+
+#save-config-message.error {
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid #dc3545;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     .sidebar {

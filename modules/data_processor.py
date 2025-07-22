@@ -1,4 +1,50 @@
 import pandas as pd
+from statistics import mode
+
+def infer_periodicity(df: pd.DataFrame) -> str:
+    """
+    Analisa um DataFrame de série temporal e infere sua periodicidade
+    baseada na diferença entre datas consecutivas.
+    
+    Args:
+        df: DataFrame com coluna 'data' contendo as datas da série
+        
+    Returns:
+        str: "Diária", "Mensal", "Anual" ou "Desconhecida"
+    """
+    if df.empty or len(df) < 2:
+        return "Desconhecida"
+    
+    # Garantir que a coluna data está em formato datetime
+    df_copy = df.copy()
+    df_copy['data'] = pd.to_datetime(df_copy['data'])
+    
+    # Ordenar por data para garantir sequência correta
+    df_copy = df_copy.sort_values('data')
+    
+    # Calcular diferenças em dias entre datas consecutivas
+    date_diffs = df_copy['data'].diff().dt.days.dropna()
+    
+    if date_diffs.empty:
+        return "Desconhecida"
+    
+    try:
+        # Calcular a moda (valor mais comum) das diferenças
+        most_common_diff = mode(date_diffs)
+        
+        # Classificar baseado na diferença mais comum
+        if most_common_diff == 1:
+            return "diaria"
+        elif 28 <= most_common_diff <= 31:
+            return "mensal"
+        elif 365 <= most_common_diff <= 366:
+            return "anual"
+        else:
+            return "Desconhecida"
+            
+    except Exception:
+        # Em caso de erro ou dados inconsistentes
+        return "Desconhecida"
 
 def process_series_data(df, series_code):
     """

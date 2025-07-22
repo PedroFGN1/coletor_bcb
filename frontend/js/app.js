@@ -24,6 +24,19 @@ document.addEventListener("DOMContentLoaded", function () {
     let isCollecting = false;
     let dataTable;
 
+    // Função auxiliar para exibir mensagens
+    function displayMessage(element, message, type) {
+        element.textContent = message;
+        element.className = `visible ${type}`;
+        
+        // Auto-ocultar após 5 segundos para mensagens de sucesso
+        if (type === 'success') {
+            setTimeout(() => {
+                element.classList.remove('visible');
+            }, 5000);
+        }
+    }
+
     // Inicialização
     setupEventListeners();
     addLog("Sistema inicializado com sucesso.", "info");
@@ -123,13 +136,19 @@ document.addEventListener("DOMContentLoaded", function () {
     async function handleExport(format) {
         const seriesName = seriesSelect.value;
         if (!seriesName) return;
-
-        addLog(`Exportando ${seriesName} para ${format.toUpperCase()}...`, "info");
-        const result = await eel.export_series(seriesName, format)();
-        if (result.success) {
-            addLog(`Arquivo salvo em: ${result.path}`, "success");
-        } else {
-            addLog(`Erro na exportação: ${result.error}`, "error");
+        try {
+            addLog(`Exportando ${seriesName} para ${format.toUpperCase()}...`, "info");
+            const result = await eel.export_series(seriesName, format)();
+            if (result.success) {
+                addLog(`Arquivo salvo em: ${result.path}`, "info");
+                alert(`Arquivo salvo em: ${result.path}`, "info");
+            } else {
+                addLog(`Erro na exportação: ${result.error}`, "error");
+                alert(`Arquivo salvo em: ${result.path}`, "error");
+            }
+        } catch (error) {
+            addLog(`Erro ao exportar: ${error.message}`, "error");
+            alert(`Erro ao exportar: ${error.message}`, "error");
         }
     }
 
@@ -151,16 +170,17 @@ document.addEventListener("DOMContentLoaded", function () {
         const periodicity = periodicitySelect.value;
         const generatedName = generatedTableNameInput.value;
 
-        addSeriesErrorMessage.textContent = "";
+        // Limpar mensagem anterior
+        addSeriesErrorMessage.classList.remove('visible');
 
         if (!code || !baseName || !periodicity) {
-            addSeriesErrorMessage.textContent = "Todos os campos são obrigatórios.";
+            displayMessage(addSeriesErrorMessage, "Todos os campos são obrigatórios.", "error");
             return;
         }
 
         const periodKeywords = ["diaria", "mensal", "anual"];
         if (periodKeywords.some(p => baseName.toLowerCase().includes(p))) {
-            addSeriesErrorMessage.textContent = "O Nome Base não deve conter palavras de período.";
+            displayMessage(addSeriesErrorMessage, "O Nome Base não deve conter palavras de período.", "error");
             return;
         }
 
@@ -169,17 +189,23 @@ document.addEventListener("DOMContentLoaded", function () {
         baseNameInput.value = "";
         periodicitySelect.value = "";
         generatedTableNameInput.value = "";
+        
+        displayMessage(addSeriesErrorMessage, "Série adicionada com sucesso!", "success");
     }
 
     function addSeriesRowToTable(code, tableName, periodicity, isNew) {
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td>${code}</td>
-            <td>${tableName}</td>
-            <td>${periodicity}</td>
-            <td><button class="btn btn-danger btn-sm remove-series-btn">Remover</button></td>
+            <td class="text-center">${code}</td>
+            <td class="text-center">${tableName}</td>
+            <td class="text-center">${periodicity}</td>
+            <td class="text-center"><button class="btn btn-danger btn-sm remove-series-btn">Remover</button></td>
         `;
-        if (isNew) row.classList.add("new-series");
+        
+        // Aplicar estilo visual para novas séries
+        if (isNew) {
+            row.classList.add("new-series-row");
+        }
 
         row.querySelector(".remove-series-btn").addEventListener("click", () => {
             row.remove();
@@ -214,29 +240,86 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        saveConfigMessage.textContent = "Validando e salvando...";
+        // Limpar mensagem anterior
+        saveConfigMessage.classList.remove('visible');
+        displayMessage(saveConfigMessage, "Validando e salvando...", "info");
+        
         const result = await eel.validate_and_save_configuration(configData)();
 
         if (result.success) {
-            saveConfigMessage.textContent = "Configurações salvas com sucesso!";
-            saveConfigMessage.className = "info-message success";
-            setTimeout(() => { saveConfigMessage.textContent = ""; }, 3000);
+            displayMessage(saveConfigMessage, "Configurações salvas com sucesso!", "success");
+            
+            // Normalizar estilo após salvar - remover classe new-series-row de todas as linhas
+            const newSeriesRows = configuredSeriesTableBody.querySelectorAll(".new-series-row");
+            newSeriesRows.forEach(row => {
+                row.classList.remove("new-series-row");
+            });
         } else {
-            saveConfigMessage.textContent = `Erro: ${result.error}`;
-            saveConfigMessage.className = "info-message error";
+            displayMessage(saveConfigMessage, `Erro: ${result.error}`, "error");
         }
     }
 
-    // --- Funções Expostas pelo Eel ---
+    // Função para adicionar logs (chamada pelo Python)
     eel.expose(add_log);
-    function add_log(message, type = "info") {
+    function add_log(message, type = 'info') {
+        addLog(message, type);
+    }
+
+    function addLog(message, type = "info") {
         const logEntry = document.createElement("div");
         logEntry.className = `log-entry ${type}`;
         const timestamp = new Date().toLocaleTimeString("pt-BR");
         logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="message">${message}</span>`;
         logContainer.appendChild(logEntry);
         logContainer.scrollTop = logContainer.scrollHeight;
+        // Animação de entrada
+        logEntry.style.opacity = '0';
+        logEntry.style.transform = 'translateY(10px)';
+        
+        setTimeout(() => {
+            logEntry.style.transition = 'all 0.3s ease';
+            logEntry.style.opacity = '1';
+            logEntry.style.transform = 'translateY(0)';
+        }, 10);
     }
+
+    // Função para determinar o tipo de log baseado no conteúdo
+    function getLogType(message) {
+        const lowerMessage = message.toLowerCase();
+        
+        if (lowerMessage.includes('erro') || lowerMessage.includes('error')) {
+            return 'error';
+        } else if (lowerMessage.includes('aviso') || lowerMessage.includes('warning')) {
+            return 'warning';
+        } else if (lowerMessage.includes('sucesso') || lowerMessage.includes('finalizado') || lowerMessage.includes('salvos')) {
+            return 'info';
+        } else {
+            return 'info';
+        }
+    }
+
+    // Sobrescreve a função add_log para usar detecção automática de tipo
+    const originalAddLog = add_log;
+    add_log = function(message, type) {
+        if (!type) {
+            type = getLogType(message);
+        }
+        originalAddLog(message, type);
+    };
+
+    // Tratamento de erros globais
+    window.addEventListener('error', function(e) {
+        addLog(`Erro na interface: ${e.message}`, 'error');
+    });
+
+    // Previne o fechamento acidental durante a coleta
+    window.addEventListener('beforeunload', function(e) {
+        if (isCollecting) {
+            e.preventDefault();
+            e.returnValue = 'Uma coleta está em andamento. Tem certeza que deseja sair?';
+            return e.returnValue;
+        }
+    });
 
     eel.expose(collection_finished);
     function collection_finished() {

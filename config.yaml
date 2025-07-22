@@ -2,8 +2,9 @@ database:
   type: sqlite
   db_name: dados_bcb.db
 series_codes:
-  433: ipca_mensal
-  1: selic_diaria
-  7811: tr_mensal
-  4390: selic_mensal
-  3698: dolar_mensal
+  '1': selic_diaria
+  '433': ipca_mensal
+  '3698': dolar_mensal
+  '4390': selic_mensal
+  '7811': tr_mensal
+  '196': poupanca_mensal

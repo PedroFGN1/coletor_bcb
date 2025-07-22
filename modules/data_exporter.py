@@ -38,4 +38,3 @@ def export_dataframe(df: pd.DataFrame, file_format: str, table_name: str) -> str
         raise ValueError(f"Formato não suportado: {file_format}")
     
     return filepath
-

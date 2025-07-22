@@ -7,7 +7,7 @@ import os
 import sys
 
 from modules.data_acquirer import fetch_bcb_series
-from modules.data_processor import process_series_data
+from modules.data_processor import process_series_data, infer_periodicity
 from modules.data_exporter import export_dataframe
 from persistence.sqlite_adapter import SQLiteAdapter
 
@@ -138,32 +138,53 @@ def validate_and_save_configuration(config_data: dict):
     except FileNotFoundError:
         current_config = {"database": {"type": "sqlite", "db_name": "dados_bcb.db"}, "series_codes": {}}
 
+    # Critério 3: Inicializar estruturas de verificação de unicidade
+    unique_codes = set()
+    unique_table_names = set()
+    
     new_series_codes = {}
     for series in config_data.get("series", []):
         code = str(series["code"])
         table_name = series["table_name"]
         periodicidade = series["periodicidade"]
 
-        # Critério 1: Validação de Existência (tentar buscar dados)
+        # Critério 3: Verificação de duplicatas na lista atual
+        if code in unique_codes:
+            return {"success": False, "error": f"Código de série duplicado encontrado: {code}"}
+        if table_name in unique_table_names:
+            return {"success": False, "error": f"Nome de tabela duplicado encontrado: {table_name}"}
+        
+        unique_codes.add(code)
+        unique_table_names.add(table_name)
+
+        # Critério 1: Validação de Existência Baseada na Periodicidade
         try:
-            # Buscar um pequeno intervalo de dados para validação
-            # A API do BCB não permite buscar dados de uma data futura
-            # Então, buscaremos dados até a data atual
-            test_data = fetch_bcb_series(code, datetime.now() - pd.Timedelta(days=30), datetime.now(), table_name)
+            # Definir intervalo dinâmico baseado na periodicidade
+            if periodicidade == "diaria":
+                days_back = 30
+            elif periodicidade == "mensal":
+                days_back = 90
+            elif periodicidade == "anual":
+                days_back = 366
+            else:
+                days_back = 30  # padrão para periodicidades não reconhecidas
+            
+            start_date = datetime.now() - pd.Timedelta(days=days_back)
+            test_data = fetch_bcb_series(code, start_date, datetime.now(), table_name)
+            
             if test_data.empty:
                 return {"success": False, "error": f"Série {code} ({table_name}) não retornou dados. Verifique o código da série."}
         except Exception as e:
             return {"success": False, "error": f"Erro ao validar série {code} ({table_name}): {str(e)}"}
 
-        # Critério 2: Validação de Periodicidade
-        # Lógica simplificada: verificar se a periodicidade do nome da tabela corresponde ao esperado
-        # Uma validação mais robusta exigiria analisar a frequência dos dados retornados pela API
-    
-        # Critério 3: Validação de Unicidade do Nome
-        # Verificar se o nome da tabela já está em uso por outro código
-        for existing_code, existing_name in current_config.get("series_codes", {}).items():
-            if existing_name == table_name and existing_code != code:
-                return {"success": False, "error": f"O nome de tabela \'{table_name}\' já está em uso pela série {existing_code}."}
+        # Critério 2: Validação Real de Periodicidade
+        try:
+            test_data = process_series_data(test_data, code)
+            inferred_periodicity = infer_periodicity(test_data)
+            if inferred_periodicity != periodicidade and inferred_periodicity != "Desconhecida":
+                return {"success": False, "error": f"Periodicidade inconsistente para série {code} ({table_name}). Esperado: {periodicidade}, Detectado: {inferred_periodicity}"}
+        except Exception as e:
+            return {"success": False, "error": f"Erro ao validar periodicidade da série {code} ({table_name}): {str(e)}"}
         
         new_series_codes[code] = table_name
 
@@ -207,11 +228,18 @@ def _run_data_collection():
     db_config = config.get("database", {})
     db_type = db_config.get("type")
     db_name = db_config.get("db_name")
-
-    if db_type == "sqlite":
-        adapter = SQLiteAdapter(db_name)
-    else:
-        send_log_to_frontend(f"Erro: Tipo de banco de dados \'{db_type}\' não suportado.")
+    
+    try:
+        if not db_type or not db_name:
+            raise ValueError("Configuração do banco de dados inválida. Verifique o arquivo config.yaml.")
+        if db_type == "sqlite":
+            adapter = SQLiteAdapter(db_name)
+        else:
+            send_log_to_frontend(f"Erro: Tipo de banco de dados \'{db_type}\' não suportado.")
+            eel.collection_finished()()
+            return
+    except Exception as e:
+        send_log_to_frontend(f"Erro ao configurar o adaptador de banco de dados: {str(e)}")
         eel.collection_finished()()
         return
 
