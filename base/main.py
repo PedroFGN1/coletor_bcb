@@ -1,7 +1,7 @@
 import pandas as pd
 import yaml
 from datetime import datetime
-from modules.data_acquirer import fetch_bcb_series
+from modules.data_acquirer_sgs import fetch_bcb_series
 from modules.data_processor import process_series_data
 from persistence.sqlite_adapter import SQLiteAdapter
 

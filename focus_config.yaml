@@ -1,0 +1,324 @@
+# ===================================================================
+# CONFIGURAÇÃO DOS ENDPOINTS DA API DE EXPECTATIVAS (BOLETIM FOCUS)
+# ===================================================================
+# Este arquivo define a estrutura para consulta dos dados do Boletim
+# Focus do Banco Central do Brasil. Cada entrada representa um
+# endpoint da API, com seus respectivos parâmetros de consulta e
+# campos de resultado.
+# ===================================================================
+database:
+  type: sqlite
+  db_name: dados_bcb.db
+
+focus_endpoints:
+  ExpectativasMercadoAnuais:
+    nome_amigavel: "Expectativas de Mercado Anuais"
+    descricao_endpoint: "Consulta as projeções anuais para os principais indicadores econômicos."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador (ex: IPCA, Selic, Câmbio, PIB Total)."
+      IndicadorDetalhe:
+        tipo: string
+        descricao: "Detalhamento do indicador, se aplicável (ex: IPCA - 12 meses)."
+      Data:
+        tipo: string # Na API é string, mas pode ser tratado como data
+        descricao: "Data da coleta da expectativa."
+      DataReferencia:
+        tipo: string # Na API é string, mas representa o ano
+        descricao: "Ano de referência da projeção."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas dos respondentes."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas dos respondentes."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+      numeroRespondentes:
+        tipo: integer
+        descricao: "Quantidade de instituições que responderam à pesquisa."
+      baseCalculo:
+        tipo: integer
+        descricao: "Base de cálculo utilizada."
+
+  ExpectativaMercadoMensais:
+    nome_amigavel: "Expectativas de Mercado Mensais"
+    descricao_endpoint: "Consulta as projeções mensais para os principais indicadores econômicos."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador (ex: IPCA, IGP-M)."
+      Data:
+        tipo: string
+        descricao: "Data da coleta da expectativa."
+      DataReferencia:
+        tipo: string
+        descricao: "Mês e ano de referência da projeção (formato 'mmm/yyyy')."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas dos respondentes."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas dos respondentes."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+      numeroRespondentes:
+        tipo: integer
+        descricao: "Quantidade de instituições que responderam à pesquisa."
+      baseCalculo:
+        tipo: integer
+        descricao: "Base de cálculo utilizada."
+
+  ExpectativasMercadoTrimestrais:
+    nome_amigavel: "Expectativas de Mercado Trimestrais"
+    descricao_endpoint: "Consulta as projeções trimestrais para o PIB."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador (ex: PIB Total)."
+      Data:
+        tipo: string
+        descricao: "Data da coleta da expectativa."
+      DataReferencia:
+        tipo: string
+        descricao: "Trimestre e ano de referência da projeção (formato 't/yyyy')."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas dos respondentes."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas dos respondentes."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+      numeroRespondentes:
+        tipo: integer
+        descricao: "Quantidade de instituições que responderam à pesquisa."
+      baseCalculo:
+        tipo: integer
+        descricao: "Base de cálculo utilizada."
+
+  ExpectativasMercadoTop5Anuais:
+    nome_amigavel: "Expectativas de Mercado Top 5 Anuais"
+    descricao_endpoint: "Consulta as projeções anuais do grupo Top 5 (curto e médio prazo)."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador (ex: IPCA, Selic, Câmbio)."
+      Data:
+        tipo: string
+        descricao: "Data da coleta da expectativa."
+      DataReferencia:
+        tipo: string
+        descricao: "Ano de referência da projeção."
+      tipoCalculo:
+        tipo: string
+        descricao: "Tipo de cálculo (ex: 'curto prazo', 'médio prazo')."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas dos respondentes do grupo Top 5."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas dos respondentes do grupo Top 5."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+
+  ExpectativasMercadoTop5Mensais:
+    nome_amigavel: "Expectativas de Mercado Top 5 Mensais"
+    descricao_endpoint: "Consulta as projeções mensais do grupo Top 5 (curto prazo)."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador (ex: IPCA, IGP-M)."
+      Data:
+        tipo: string
+        descricao: "Data da coleta da expectativa."
+      DataReferencia:
+        tipo: string
+        descricao: "Mês e ano de referência da projeção (formato 'mmm/yyyy')."
+      tipoCalculo:
+        tipo: string
+        descricao: "Tipo de cálculo (ex: 'curto prazo')."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas dos respondentes do grupo Top 5."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas dos respondentes do grupo Top 5."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+
+  ExpectativasMercadoSelic:
+    nome_amigavel: "Expectativas de Mercado Selic"
+    descricao_endpoint: "Consulta as projeções para a taxa Selic nas reuniões do Copom."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador (Selic)."
+      Data:
+        tipo: string
+        descricao: "Data da reunião do Copom."
+      Reuniao:
+        tipo: string
+        descricao: "Número da reunião do Copom (ex: R255)."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas para a Selic."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas para a Selic."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+      numeroRespondentes:
+        tipo: integer
+        descricao: "Quantidade de instituições que responderam à pesquisa."
+      baseCalculo:
+        tipo: integer
+        descricao: "Base de cálculo utilizada."
+
+  ExpectativasMercadoInflacao12Meses:
+    nome_amigavel: "Expectativas de Mercado para Inflação 12 meses"
+    descricao_endpoint: "Consulta as projeções de inflação para os próximos 12 meses."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador de inflação (ex: IPCA)."
+      Data:
+        tipo: string
+        descricao: "Data da coleta da expectativa."
+      Suavizada:
+        tipo: string
+        descricao: "Indica se a expectativa é suavizada (ex: 'Sim' ou 'Não')."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+      numeroRespondentes:
+        tipo: integer
+        descricao: "Quantidade de instituições que responderam à pesquisa."
+      baseCalculo:
+        tipo: integer
+        descricao: "Base de cálculo utilizada."
+  
+  ExpectativasMercadoInflacao24Meses:
+    nome_amigavel: "Expectativas de Mercado para Inflação 13 a 24 meses"
+    descricao_endpoint: "Consulta as projeções de inflação para o período de 13 a 24 meses à frente."
+    parametros:
+      Indicador:
+        tipo: string
+        descricao: "Nome do indicador de inflação (ex: IPCA)."
+      Data:
+        tipo: string
+        descricao: "Data da coleta da expectativa."
+      Suavizada:
+        tipo: string
+        descricao: "Indica se a expectativa é suavizada (ex: 'Sim' ou 'Não')."
+      Media:
+        tipo: number
+        descricao: "Média das expectativas."
+      Mediana:
+        tipo: number
+        descricao: "Mediana das expectativas."
+      DesvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      Minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      Maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."
+      numeroRespondentes:
+        tipo: integer
+        descricao: "Quantidade de instituições que responderam à pesquisa."
+      baseCalculo:
+        tipo: integer
+        descricao: "Base de cálculo utilizada."
+
+  ExpectativasMercadoTop5Selic:
+    nome_amigavel: "Expectativas de Mercado Selic Top 5"
+    descricao_endpoint: "Consulta as projeções para a Selic do grupo Top 5."
+    parametros:
+      indicador:
+        tipo: string
+        descricao: "Nome do indicador (Selic)."
+      Data:
+        tipo: string
+        descricao: "Data da reunião do Copom."
+      reuniao:
+        tipo: string
+        descricao: "Número da reunião do Copom (ex: R255)."
+      tipoCalculo:
+        tipo: integer
+        descricao: "Base de cálculo utilizada."
+      media:
+        tipo: number
+        descricao: "Média das expectativas para a Selic."
+      mediana:
+        tipo: number
+        descricao: "Mediana das expectativas para a Selic."
+      desvioPadrao:
+        tipo: number
+        descricao: "Desvio padrão das expectativas."
+      coeficienteVariacao:
+        tipo: number
+        descricao: "Coeficiente de variação das expectativas."
+      minimo:
+        tipo: number
+        descricao: "Valor mínimo observado nas expectativas."
+      maximo:
+        tipo: number
+        descricao: "Valor máximo observado nas expectativas."

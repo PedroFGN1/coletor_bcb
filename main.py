@@ -6,7 +6,7 @@ import threading
 import os
 import sys
 
-from modules.data_acquirer import fetch_bcb_series
+from modules.data_acquirer_sgs import fetch_bcb_series
 from modules.data_processor import process_series_data, infer_periodicity
 from modules.data_exporter import export_dataframe
 from persistence.sqlite_adapter import SQLiteAdapter
