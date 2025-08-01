@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const menuItems = document.querySelectorAll(".menu-item");
     const contentSections = document.querySelectorAll(".content-section");
     const startCollectionBtn = document.getElementById("start-collection-btn");
+    const startFocusCollectionBtn = document.getElementById("start-focus-collection-btn");
     const clearLogsBtn = document.getElementById("clear-logs-btn");
     const logContainer = document.getElementById("log-container");
     const loadingOverlay = document.getElementById("loading-overlay");
@@ -19,6 +20,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const generatedTableNameInput = document.getElementById("generated-table-name");
     const addSeriesErrorMessage = document.getElementById("add-series-error-message");
     const saveConfigMessage = document.getElementById("save-config-message");
+    const configTypeSelect = document.getElementById("config-type-select");
+    const seriesTemporaisConfig = document.getElementById("series-temporais-config");
+    const boletimFocusConfig = document.getElementById("boletim-focus-config");
+    const saveFocusConfigBtn = document.getElementById("save-focus-config-btn");
+    const saveFocusMessage = document.getElementById("save-focus-message");
 
     // Estado da aplicação
     let isCollecting = false;
@@ -48,12 +54,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         startCollectionBtn.addEventListener("click", handleStartCollection);
+        startFocusCollectionBtn.addEventListener("click", handleStartFocusCollection);
         clearLogsBtn.addEventListener("click", handleClearLogs);
         seriesSelect.addEventListener("change", handleSeriesSelectChange);
         exportCsvBtn.addEventListener("click", () => handleExport("csv"));
         exportExcelBtn.addEventListener("click", () => handleExport("excel"));
         addSeriesToListBtn.addEventListener("click", handleAddSeriesToList);
         saveConfigurationsBtn.addEventListener("click", handleSaveConfigurations);
+        configTypeSelect.addEventListener("change", handleConfigTypeChange);
+        saveFocusConfigBtn.addEventListener("click", handleSaveFocusConfig);
 
         [baseNameInput, periodicitySelect].forEach(el => {
             el.addEventListener("input", updateGeneratedTableName);
@@ -74,6 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
             loadSeriesList();
         } else if (sectionId === "settings-section") {
             loadCurrentConfigurations();
+            handleConfigTypeChange(); // Garantir que a seção correta seja exibida
         }
     }
 
@@ -83,6 +93,25 @@ document.addEventListener("DOMContentLoaded", function () {
         setCollectionState(true);
         addLog("Iniciando processo de coleta...", "info");
         eel.start_data_collection();
+    }
+
+    function handleStartFocusCollection() {
+        if (isCollecting) return;
+        
+        // Verificar se há configurações salvas do Focus
+        const focusConfig = getFocusConfigFromForm();
+        if (!focusConfig || !focusConfig.endpoint || !focusConfig.filters.Data) {
+            addLog("Erro: Configure os filtros do Boletim Focus antes de iniciar a coleta.", "error");
+            return;
+        }
+        
+        setCollectionState(true);
+        addLog("Iniciando processo de coleta do Boletim Focus...", "info");
+        addLog(`Endpoint selecionado: ${focusConfig.endpoint}`, "info");
+        addLog(`Filtros aplicados: ${JSON.stringify(focusConfig.filters)}`, "info");
+        
+        // Chamar função do backend com os filtros
+        eel.start_focus_collection(focusConfig.endpoint, focusConfig.filters);
     }
 
     function handleClearLogs() {
@@ -257,6 +286,198 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             displayMessage(saveConfigMessage, `Erro: ${result.error}`, "error");
         }
+    }
+
+    function handleConfigTypeChange() {
+        const selectedType = configTypeSelect.value;
+        
+        if (selectedType === "series-temporais") {
+            seriesTemporaisConfig.style.display = "block";
+            boletimFocusConfig.style.display = "none";
+        } else if (selectedType === "boletim-focus") {
+            seriesTemporaisConfig.style.display = "none";
+            boletimFocusConfig.style.display = "block";
+            loadFocusFilters(); // Carregar filtros do Focus quando a seção for exibida
+        }
+    }
+
+    function handleSaveFocusConfig() {
+        const focusConfig = getFocusConfigFromForm();
+        
+        if (!focusConfig) {
+            displayMessage(saveFocusMessage, "Erro: Preencha pelo menos o endpoint e a data de início.", "error");
+            return;
+        }
+        
+        // Salvar configuração (pode ser implementado para persistir em arquivo)
+        saveFocusMessage.classList.remove('visible');
+        displayMessage(saveFocusMessage, "Configurações do Focus salvas com sucesso!", "success");
+        addLog("Configurações do Boletim Focus salvas.", "info");
+    }
+
+    function loadFocusFilters() {
+        const focusFiltersContainer = document.getElementById("focus-filters-container");
+        focusFiltersContainer.innerHTML = `
+            <div class="form-group">
+                <label for="focus-endpoint-select">Endpoint do Focus:</label>
+                <select id="focus-endpoint-select" class="form-control">
+                    <option value="">Selecione um endpoint</option>
+                    <option value="ExpectativasMercadoAnuais">Expectativas de Mercado Anuais</option>
+                    <option value="ExpectativaMercadoMensais">Expectativas de Mercado Mensais</option>
+                    <option value="ExpectativasMercadoTrimestrais">Expectativas de Mercado Trimestrais</option>
+                    <option value="ExpectativasMercadoTop5Anuais">Expectativas de Mercado Top 5 Anuais</option>
+                    <option value="ExpectativasMercadoTop5Mensais">Expectativas de Mercado Top 5 Mensais</option>
+                    <option value="ExpectativasMercadoSelic">Expectativas de Mercado Selic</option>
+                    <option value="ExpectativasMercadoInflacao12Meses">Expectativas de Mercado para Inflação 12 meses</option>
+                    <option value="ExpectativasMercadoInflacao24Meses">Expectativas de Mercado para Inflação 13 a 24 meses</option>
+                    <option value="ExpectativasMercadoTop5Selic">Expectativas de Mercado Selic Top 5</option>
+                </select>
+            </div>
+            <div id="dynamic-filters-container">
+                <p class="text-muted">Selecione um endpoint para ver os filtros disponíveis.</p>
+            </div>
+            <div class="form-group">
+                <label for="focus-data-inicio-input">Data de Início (obrigatório):</label>
+                <input type="date" id="focus-data-inicio-input" class="form-control" required>
+                <small class="form-text text-muted">Data de início da consulta no formato YYYY-MM-DD</small>
+            </div>
+            <div class="form-group">
+                <label for="focus-data-fim-input">Data de Fim (opcional):</label>
+                <input type="date" id="focus-data-fim-input" class="form-control">
+                <small class="form-text text-muted">Se não especificada, será usada a data atual</small>
+            </div>
+        `;
+        
+        // Adicionar event listener para o seletor de endpoint
+        const endpointSelect = document.getElementById("focus-endpoint-select");
+        endpointSelect.addEventListener("change", loadDynamicFilters);
+    }
+
+    function loadDynamicFilters() {
+        const selectedEndpoint = document.getElementById("focus-endpoint-select").value;
+        const dynamicContainer = document.getElementById("dynamic-filters-container");
+        
+        if (!selectedEndpoint) {
+            dynamicContainer.innerHTML = '<p class="text-muted">Selecione um endpoint para ver os filtros disponíveis.</p>';
+            return;
+        }
+
+        // Definir filtros comuns baseados no endpoint selecionado
+        let filtersHTML = '';
+        
+        // Filtros comuns para a maioria dos endpoints
+        if (selectedEndpoint.includes("Anuais") || selectedEndpoint.includes("Mensais") || selectedEndpoint.includes("Trimestrais")) {
+            filtersHTML += `
+                <div class="form-group">
+                    <label for="focus-indicador-input">Indicador:</label>
+                    <input type="text" id="focus-indicador-input" class="form-control" placeholder="Ex: IPCA, Selic, Câmbio, PIB Total">
+                    <small class="form-text text-muted">Nome do indicador econômico</small>
+                </div>
+            `;
+        }
+
+        if (selectedEndpoint.includes("Anuais")) {
+            filtersHTML += `
+                <div class="form-group">
+                    <label for="focus-data-referencia-input">Ano de Referência:</label>
+                    <input type="number" id="focus-data-referencia-input" class="form-control" placeholder="Ex: 2024" min="2000" max="2030">
+                    <small class="form-text text-muted">Ano de referência da projeção</small>
+                </div>
+            `;
+        }
+
+        if (selectedEndpoint.includes("Mensais")) {
+            filtersHTML += `
+                <div class="form-group">
+                    <label for="focus-data-referencia-input">Mês/Ano de Referência:</label>
+                    <input type="text" id="focus-data-referencia-input" class="form-control" placeholder="Ex: jan/2024">
+                    <small class="form-text text-muted">Mês e ano de referência da projeção (formato mmm/yyyy)</small>
+                </div>
+            `;
+        }
+
+        if (selectedEndpoint.includes("Trimestrais")) {
+            filtersHTML += `
+                <div class="form-group">
+                    <label for="focus-data-referencia-input">Trimestre/Ano de Referência:</label>
+                    <input type="text" id="focus-data-referencia-input" class="form-control" placeholder="Ex: 1/2024">
+                    <small class="form-text text-muted">Trimestre e ano de referência da projeção (formato t/yyyy)</small>
+                </div>
+            `;
+        }
+
+        if (selectedEndpoint.includes("Selic")) {
+            filtersHTML += `
+                <div class="form-group">
+                    <label for="focus-reuniao-input">Reunião do Copom:</label>
+                    <input type="text" id="focus-reuniao-input" class="form-control" placeholder="Ex: R255">
+                    <small class="form-text text-muted">Número da reunião do Copom</small>
+                </div>
+            `;
+        }
+
+        if (selectedEndpoint.includes("Top5")) {
+            filtersHTML += `
+                <div class="form-group">
+                    <label for="focus-tipo-calculo-select">Tipo de Cálculo:</label>
+                    <select id="focus-tipo-calculo-select" class="form-control">
+                        <option value="">Selecione</option>
+                        <option value="curto prazo">Curto Prazo</option>
+                        <option value="médio prazo">Médio Prazo</option>
+                    </select>
+                    <small class="form-text text-muted">Tipo de cálculo para o grupo Top 5</small>
+                </div>
+            `;
+        }
+
+        if (selectedEndpoint.includes("Inflacao")) {
+            filtersHTML += `
+                <div class="form-group">
+                    <label for="focus-suavizada-select">Expectativa Suavizada:</label>
+                    <select id="focus-suavizada-select" class="form-control">
+                        <option value="">Selecione</option>
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                    <small class="form-text text-muted">Indica se a expectativa é suavizada</small>
+                </div>
+            `;
+        }
+
+        dynamicContainer.innerHTML = filtersHTML || '<p class="text-muted">Nenhum filtro adicional disponível para este endpoint.</p>';
+    }
+
+    function getFocusConfigFromForm() {
+        const endpoint = document.getElementById("focus-endpoint-select")?.value;
+        const dataInicio = document.getElementById("focus-data-inicio-input")?.value;
+        const dataFim = document.getElementById("focus-data-fim-input")?.value;
+        
+        if (!endpoint || !dataInicio) {
+            return null;
+        }
+        
+        const filters = {
+            Data: dataInicio
+        };
+        
+        // Adicionar filtros dinâmicos baseados no endpoint
+        const indicador = document.getElementById("focus-indicador-input")?.value;
+        const dataReferencia = document.getElementById("focus-data-referencia-input")?.value;
+        const reuniao = document.getElementById("focus-reuniao-input")?.value;
+        const tipoCalculo = document.getElementById("focus-tipo-calculo-select")?.value;
+        const suavizada = document.getElementById("focus-suavizada-select")?.value;
+        
+        if (indicador) filters.Indicador = indicador;
+        if (dataReferencia) filters.DataReferencia = dataReferencia;
+        if (reuniao) filters.Reuniao = reuniao;
+        if (tipoCalculo) filters.tipoCalculo = tipoCalculo;
+        if (suavizada) filters.Suavizada = suavizada;
+        if (dataFim) filters.DataFim = dataFim;
+        
+        return {
+            endpoint: endpoint,
+            filters: filters
+        };
     }
 
     // Função para adicionar logs (chamada pelo Python)

@@ -520,3 +520,60 @@ body {
 }
 
 
+
+/* Estilos para os botões de coleta */
+.collection-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.collection-buttons .btn {
+    flex: 1;
+    min-width: 200px;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .collection-buttons {
+        flex-direction: column;
+    }
+    
+    .collection-buttons .btn {
+        width: 100%;
+    }
+}
+
+
+/* Estilos para as seções de configuração */
+.config-section {
+    transition: all 0.3s ease;
+}
+
+.config-section:not([style*="display: none"]) {
+    animation: fadeInUp 0.3s ease;
+}
+
+/* Estilos para mensagens de feedback do Focus */
+#save-focus-message {
+    display: none;
+}
+
+#save-focus-message.visible {
+    display: block;
+}
+
+#save-focus-message.success {
+    color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+    border: 1px solid #28a745;
+}
+
+#save-focus-message.error {
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid #dc3545;
+}
+
