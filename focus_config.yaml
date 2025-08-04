@@ -17,10 +17,48 @@ focus_endpoints:
     parametros:
       Indicador:
         tipo: string
-        descricao: "Nome do indicador (ex: IPCA, Selic, Câmbio, PIB Total)."
+        descricao: "Selecione o indicador econômico desejado."
+        opcoes:
+          - Balança Comercial
+          - Câmbio
+          - Conta corrente
+          - Dívida bruta do governo geral
+          - Dívida líquida do setor público
+          - IGP-DI
+          - IGP-M
+          - INPC
+          - Investimento direto no país
+          - IPA-DI
+          - IPA-M
+          - IPCA
+          - IPCA Administrados
+          - IPCA Alimentação no domicílio
+          - IPCA Bens industrializados
+          - IPCA Livres
+          - IPCA Serviços
+          - IPCA-15
+          - IPC-FIPE
+          - PIB Agropecuária
+          - PIB Despesa de consumo da administração pública
+          - PIB despesa de consumo das famílias
+          - PIB Exportação de bens e serviços
+          - PIB Formação Bruta de Capital Fixo
+          - PIB Importação de bens e serviços
+          - PIB Indústria
+          - PIB Serviços
+          - PIB Total
+          - Produção industrial
+          - Resultado nominal
+          - Resultado primário
+          - Selic
+          - Taxa de desocupação
       IndicadorDetalhe:
         tipo: string
-        descricao: "Detalhamento do indicador, se aplicável (ex: IPCA - 12 meses)."
+        descricao: "Detalhe (apenas para Balança Comercial)."
+        opcoes:
+          - Exportações
+          - Importações
+          - Saldo
       Data:
         tipo: string # Na API é string, mas pode ser tratado como data
         descricao: "Data da coleta da expectativa."
@@ -55,7 +93,24 @@ focus_endpoints:
     parametros:
       Indicador:
         tipo: string
-        descricao: "Nome do indicador (ex: IPCA, IGP-M)."
+        descricao: "Selecione o indicador para a projeção mensal."
+        opcoes:
+          - Câmbio
+          - IGP-DI
+          - IGP-M
+          - INPC
+          - IPA-DI
+          - IPA-M
+          - IPCA
+          - IPCA Administrados
+          - IPCA Alimentação no domicílio
+          - IPCA Bens industrializados
+          - IPCA Livres
+          - IPCA Serviços
+          - IPCA-15
+          - IPC-Fipe
+          - Produção industrial
+          - Taxa de desocupação
       Data:
         tipo: string
         descricao: "Data da coleta da expectativa."
@@ -90,7 +145,20 @@ focus_endpoints:
     parametros:
       Indicador:
         tipo: string
-        descricao: "Nome do indicador (ex: PIB Total)."
+        descricao: "Selecione o indicador para a projeção trimestral."
+        opcoes:
+          - Câmbio
+          - IPCA
+          - IPCA Administrados
+          - IPCA Alimentação no domicílio
+          - IPCA Bens industrializados
+          - IPCA Livres
+          - IPCA Serviços
+          - PIB Agropecuária
+          - PIB Indústria
+          - PIB Serviços
+          - PIB Total
+          - Taxa de desocupação
       Data:
         tipo: string
         descricao: "Data da coleta da expectativa."
@@ -125,7 +193,13 @@ focus_endpoints:
     parametros:
       Indicador:
         tipo: string
-        descricao: "Nome do indicador (ex: IPCA, Selic, Câmbio)."
+        descricao: "Selecione o indicador."
+        opcoes:
+          - Câmbio
+          - IGP-DI
+          - IGP-M
+          - IPCA
+          - Selic
       Data:
         tipo: string
         descricao: "Data da coleta da expectativa."
@@ -134,7 +208,11 @@ focus_endpoints:
         descricao: "Ano de referência da projeção."
       tipoCalculo:
         tipo: string
-        descricao: "Tipo de cálculo (ex: 'curto prazo', 'médio prazo')."
+        descricao: "Selecione o tipo de cálculo (Curto / Médio / Longo)."
+        opcoes:
+          - C
+          - M
+          - L
       Media:
         tipo: number
         descricao: "Média das expectativas dos respondentes do grupo Top 5."
@@ -157,7 +235,12 @@ focus_endpoints:
     parametros:
       Indicador:
         tipo: string
-        descricao: "Nome do indicador (ex: IPCA, IGP-M)."
+        descricao: "Selecione o indicador."
+        opcoes:
+          - Câmbio
+          - IGP-DI
+          - IGP-M
+          - IPCA
       Data:
         tipo: string
         descricao: "Data da coleta da expectativa."
@@ -166,7 +249,11 @@ focus_endpoints:
         descricao: "Mês e ano de referência da projeção (formato 'mmm/yyyy')."
       tipoCalculo:
         tipo: string
-        descricao: "Tipo de cálculo (ex: 'curto prazo')."
+        descricao: "Selecione o tipo de cálculo (Curto / Médio / Longo)."
+        opcoes:
+          - C
+          - M
+          - L
       Media:
         tipo: number
         descricao: "Média das expectativas dos respondentes do grupo Top 5."
@@ -195,7 +282,16 @@ focus_endpoints:
         descricao: "Data da reunião do Copom."
       Reuniao:
         tipo: string
-        descricao: "Número da reunião do Copom (ex: R255)."
+        descricao: "Selecione a reunião do Copom."
+        opcoes:
+          - R1
+          - R2
+          - R3
+          - R4
+          - R5
+          - R6
+          - R7
+          - R8
       Media:
         tipo: number
         descricao: "Média das expectativas para a Selic."
@@ -224,13 +320,30 @@ focus_endpoints:
     parametros:
       Indicador:
         tipo: string
-        descricao: "Nome do indicador de inflação (ex: IPCA)."
+        descricao: "Selecione o indicador de inflação."
+        opcoes:
+          - IGP-DI
+          - IGP-M
+          - INPC
+          - IPA-DI
+          - IPA-M
+          - IPCA
+          - IPCA Administrados
+          - IPCA Alimentação no domicílio
+          - IPCA Bens industrializados
+          - IPCA Livres
+          - IPCA Serviços
+          - IPCA-15
+          - IPC-FIPE
       Data:
         tipo: string
         descricao: "Data da coleta da expectativa."
       Suavizada:
         tipo: string
         descricao: "Indica se a expectativa é suavizada (ex: 'Sim' ou 'Não')."
+        opcoes:
+          - S
+          - N
       Media:
         tipo: number
         descricao: "Média das expectativas."
@@ -259,13 +372,30 @@ focus_endpoints:
     parametros:
       Indicador:
         tipo: string
-        descricao: "Nome do indicador de inflação (ex: IPCA)."
+        descricao: "Selecione o indicador de inflação."
+        opcoes:
+          - IGP-DI
+          - IGP-M
+          - INPC
+          - IPA-DI
+          - IPA-M
+          - IPCA
+          - IPCA Administrados
+          - IPCA Alimentação no domicílio
+          - IPCA Bens industrializados
+          - IPCA Livres
+          - IPCA Serviços
+          - IPCA-15
+          - IPC-FIPE
       Data:
         tipo: string
         descricao: "Data da coleta da expectativa."
       Suavizada:
         tipo: string
         descricao: "Indica se a expectativa é suavizada (ex: 'Sim' ou 'Não')."
+        opcoes:
+          - S
+          - N
       Media:
         tipo: number
         descricao: "Média das expectativas."
@@ -300,10 +430,23 @@ focus_endpoints:
         descricao: "Data da reunião do Copom."
       reuniao:
         tipo: string
-        descricao: "Número da reunião do Copom (ex: R255)."
+        descricao: "Selecione a reunião do Copom."
+        opcoes:
+          - R1
+          - R2
+          - R3
+          - R4
+          - R5
+          - R6
+          - R7
+          - R8
       tipoCalculo:
         tipo: integer
-        descricao: "Base de cálculo utilizada."
+        descricao: "Selecione o tipo de cálculo (Curto / Médio / Longo)."
+        opcoes:
+          - C
+          - M
+          - L
       media:
         tipo: number
         descricao: "Média das expectativas para a Selic."
