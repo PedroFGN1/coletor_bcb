@@ -17,7 +17,7 @@ def export_dataframe(df: pd.DataFrame, file_format: str, table_name: str) -> str
     # Determinar pasta de Downloads do usuário
     home_dir = os.path.expanduser("~")
     downloads_dir = os.path.join(home_dir, "Downloads")
-    sheet_name = f'ColetorBCB_v2.0-{table_name}'
+    sheet_name = f'ColetorBCB_v2.2-{table_name}'
     
     # Se não existir pasta Downloads, usar diretório atual
     if not os.path.exists(downloads_dir):

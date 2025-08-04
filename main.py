@@ -6,32 +6,19 @@ import threading
 import os
 import sys
 
+from methods._run_focus_collection import _run_focus_collection
+from methods._run_series_collection import _run_series_collection
 from modules.data_acquirer_sgs import fetch_bcb_series
 from modules.data_acquirer_focus import fetch_bcb_focus
+from modules.data_config_series import load_series_config
 from modules.data_processor import process_series_data, infer_periodicity
 from modules.data_exporter import export_dataframe
 from persistence.sqlite_adapter import SQLiteAdapter
+from utils.get_base_path import get_base_path
+from utils.send_log_to_frontend import send_log_to_frontend
 
 # Inicializa o Eel
 eel.init("frontend")
-
-def get_base_path(path):
-    """Retorna o caminho base para encontrar os arquivos de recurso."""
-    if getattr(sys, "frozen", False):
-        # Se o programa estiver "congelado" (rodando como .exe)
-        # o caminho base é o diretório temporário _MEIPASS
-        return os.path.join(sys._MEIPASS, path)
-    else:
-        # Se estiver rodando como script .py normal
-        # O caminho base é o diretório onde o script está
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
-
-def send_log_to_frontend(message):
-    """
-    Envia mensagens de log para a interface web.
-    """
-    print(message) # Mantém o print no terminal para debug
-    eel.add_log(message)()
 
 @eel.expose
 def start_data_collection():
@@ -39,7 +26,7 @@ def start_data_collection():
     Função exposta para a interface web para iniciar a coleta de dados.
     Executa em uma thread separada para não bloquear a UI.
     """
-    threading.Thread(target=_run_data_collection).start()
+    threading.Thread(target=_run_series_collection).start()
 
 @eel.expose
 def start_focus_collection(endpoint: str, filters: dict):
@@ -54,7 +41,7 @@ def get_series_list():
     """
     Retorna a lista de séries disponíveis no banco de dados.
     """
-    config_path = get_base_path("config.yaml")
+    config_path = get_base_path("series_config.yaml")
     try:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
@@ -81,7 +68,7 @@ def get_series_data(series_name: str):
     """
     Retorna os dados de uma série específica.
     """
-    config_path = get_base_path("config.yaml")
+    config_path = get_base_path("series_config.yaml")
     try:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
@@ -109,7 +96,7 @@ def export_series(series_name: str, export_format: str):
     Exporta uma série para CSV ou Excel.
     """
     try:
-        config_path = get_base_path("config.yaml")
+        config_path = get_base_path("series_config.yaml")
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
 
@@ -140,7 +127,7 @@ def validate_and_save_configuration(config_data: dict):
     """
     Valida e salva a configuração de séries.
     """
-    current_config_path = get_base_path("config.yaml")
+    current_config_path = get_base_path("series_config.yaml")
     try:
         with open(current_config_path, "r") as f:
             current_config = yaml.safe_load(f)
@@ -204,170 +191,19 @@ def validate_and_save_configuration(config_data: dict):
             yaml.safe_dump(current_config, f, sort_keys=False)
         return {"success": True}
     except Exception as e:
-        return {"success": False, "error": f"Erro ao salvar config.yaml: {str(e)}"}
+        return {"success": False, "error": f"Erro ao salvar series_config.yaml: {str(e)}"}
 
 @eel.expose
 def get_current_config():
     """
-    Retorna a configuração atual do config.yaml.
+    Retorna a configuração atual do series_config.yaml.
     """
-    config_path = get_base_path("config.yaml")
     try:
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-            return config
-    except FileNotFoundError:
-        return {"database": {"type": "sqlite", "db_name": "dados_bcb.db"}, "series_codes": {}}
-
-def _run_data_collection():
-    """
-    Lógica principal de coleta de dados, movida para uma função separada.
-    """
-    send_log_to_frontend("Iniciando processo de coleta de dados...")
-    config = {}
-    config_path = get_base_path("config.yaml")
-    try:
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-    except FileNotFoundError:
-        send_log_to_frontend(f"Erro: Arquivo config.yaml não encontrado em {config_path}.")
-        eel.collection_finished()()
-        return
-
-    db_config = config.get("database", {})
-    db_type = db_config.get("type")
-    db_name = db_config.get("db_name")
-    
-    try:
-        if not db_type or not db_name:
-            raise ValueError("Configuração do banco de dados inválida. Verifique o arquivo config.yaml.")
-        if db_type == "sqlite":
-            adapter = SQLiteAdapter(db_name)
-        else:
-            send_log_to_frontend(f"Erro: Tipo de banco de dados \'{db_type}\' não suportado.")
-            eel.collection_finished()()
-            return
+        return load_series_config()
     except Exception as e:
-        send_log_to_frontend(f"Erro ao configurar o adaptador de banco de dados: {str(e)}")
-        eel.collection_finished()()
-        return
-
-    adapter.connect()
-
-    try:
-        series_codes = config.get("series_codes", {})
-        for code, series_name in series_codes.items():
-            send_log_to_frontend(f"\nProcessando série: {series_name} (Código BCB: {code})")
-            last_date = adapter.get_last_date(series_name)
-            
-            start_date = None
-            if last_date:
-                start_date = last_date + pd.Timedelta(days=1)
-                send_log_to_frontend(f'Última data encontrada para {series_name}: {last_date.strftime("%Y-%m-%d")}. Buscando a partir de {start_date.strftime("%Y-%m-%d")}')
-            else:
-                start_date = datetime(1990, 1, 1)
-                send_log_to_frontend(f'Nenhum registro encontrado para {series_name}. Buscando desde {start_date.strftime("%Y-%m-%d")}')
-
-            raw_data = fetch_bcb_series(code, start_date, datetime.now(), series_name)
-            processed_data = process_series_data(raw_data, code)
-
-            if not processed_data.empty:
-                if last_date:
-                    processed_data = processed_data[processed_data["data"] > last_date]
-                
-                if not processed_data.empty:
-                    adapter.save_data(series_name, processed_data)
-                    send_log_to_frontend(f"{len(processed_data)} novos registros salvos para {series_name}.")
-                else:
-                    send_log_to_frontend(f"Nenhum novo registro para {series_name} desde a última atualização.")
-            else:
-                send_log_to_frontend(f"Nenhum dado retornado da API para a série {series_name}.")
-    except Exception as e:
-        send_log_to_frontend(f"Erro durante a coleta de dados: {str(e)}")
-        eel.collection_finished()()
-        return
-
-    finally:
-        adapter.disconnect()
-        send_log_to_frontend("Processo de coleta de dados finalizado.")
-        eel.collection_finished()()
-
-def _run_focus_collection(endpoint: str, filters: dict):
-    """
-    Lógica principal de coleta de dados do Boletim Focus.
-    """
-    send_log_to_frontend("Iniciando processo de coleta do Boletim Focus...")
-    send_log_to_frontend(f"Endpoint: {endpoint}")
-    send_log_to_frontend(f"Filtros: {filters}")
-    
-    try:
-        # Mapear endpoint técnico para nome amigável
-        endpoint_mapping = {
-            "ExpectativasMercadoAnuais": "Expectativas de Mercado Anuais",
-            "ExpectativaMercadoMensais": "Expectativas de Mercado Mensais",
-            "ExpectativasMercadoTrimestrais": "Expectativas de Mercado Trimestrais",
-            "ExpectativasMercadoTop5Anuais": "Expectativas de Mercado Top 5 Anuais",
-            "ExpectativasMercadoTop5Mensais": "Expectativas de Mercado Top 5 Mensais",
-            "ExpectativasMercadoSelic": "Expectativas de Mercado Selic",
-            "ExpectativasMercadoInflacao12Meses": "Expectativas de Mercado para Inflação 12 meses",
-            "ExpectativasMercadoInflacao24Meses": "Expectativas de Mercado para Inflação 13 a 24 meses",
-            "ExpectativasMercadoTop5Selic": "Expectativas de Mercado Selic Top 5"
-        }
-        
-        nome_boletim = endpoint_mapping.get(endpoint, endpoint)
-        send_log_to_frontend(f"Coletando dados para: {nome_boletim}")
-        
-        # Chamar a função de coleta com os filtros
-        df_resultado = fetch_bcb_focus(nome_boletim, **filters)
-        
-        if df_resultado is not None and not df_resultado.empty:
-            send_log_to_frontend(f"Dados coletados com sucesso: {len(df_resultado)} registros")
-            
-            # Configurar banco de dados
-            config_path = get_base_path("config.yaml")
-            try:
-                with open(config_path, "r") as f:
-                    config = yaml.safe_load(f)
-            except FileNotFoundError:
-                send_log_to_frontend("Erro: Arquivo config.yaml não encontrado.")
-                eel.collection_finished()()
-                return
-            
-            db_config = config.get("database", {})
-            db_type = db_config.get("type")
-            db_name = db_config.get("db_name")
-            
-            if db_type == "sqlite":
-                adapter = SQLiteAdapter(db_name)
-                adapter.connect()
-                
-                try:
-                    # Gerar nome da tabela baseado no endpoint e filtros
-                    table_name = f"focus_{endpoint.lower()}"
-                    if filters.get("Indicador"):
-                        table_name += f"_{filters['Indicador'].lower().replace(' ', '_')}"
-                    
-                    # Salvar dados
-                    adapter.save_data(table_name, df_resultado)
-                    send_log_to_frontend(f"Dados salvos na tabela: {table_name}")
-                    
-                finally:
-                    adapter.disconnect()
-            else:
-                send_log_to_frontend(f"Erro: Tipo de banco de dados '{db_type}' não suportado.")
-        else:
-            send_log_to_frontend("Nenhum dado foi retornado para os filtros especificados.")
-            
-    except ImportError:
-        send_log_to_frontend("Erro: Módulo data_acquirer_focus não encontrado. Verifique se o arquivo está presente.")
-    except Exception as e:
-        send_log_to_frontend(f"Erro durante a coleta do Boletim Focus: {str(e)}")
-    
-    finally:
-        send_log_to_frontend("Processo de coleta do Boletim Focus finalizado.")
-        eel.collection_finished()()
+        return {e}
 
 if __name__ == "__main__":
     # Inicia a interface Eel
-    eel.start("index.html", size=(1000, 700))
+    eel.start("index.html", size=(1000, 700), port=0)
 

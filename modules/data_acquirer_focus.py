@@ -1,6 +1,6 @@
 from bcb import Expectativas, sgs
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 from .data_config_focus import load_focus_config
 
 def _build_query_filters(user_params: dict, endpoint_config: dict) -> dict | None:

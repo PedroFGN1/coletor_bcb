@@ -1,17 +1,5 @@
 import yaml
-import os
-import sys
-
-def get_base_path(path):
-    """Retorna o caminho base para encontrar os arquivos de recurso."""
-    if getattr(sys, "frozen", False):
-        # Se o programa estiver "congelado" (rodando como .exe)
-        # o caminho base é o diretório temporário _MEIPASS
-        return os.path.join(sys._MEIPASS, path)
-    else:
-        # Se estiver rodando como script .py normal
-        # O caminho base é o diretório onde o script está
-        return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), path)
+from utils.get_base_path import get_base_path
 
 def load_focus_config():
     """
