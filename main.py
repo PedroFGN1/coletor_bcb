@@ -1,21 +1,18 @@
-import pandas as pd
-import yaml
-from datetime import datetime
 import eel
 import threading
-import os
-import sys
+import yaml
+import pandas as pd
+from datetime import datetime
 
 from methods._run_focus_collection import _run_focus_collection
 from methods._run_series_collection import _run_series_collection
 from modules.data_acquirer_sgs import fetch_bcb_series
 from modules.data_acquirer_focus import fetch_bcb_focus
 from modules.data_config_series import load_series_config
+from utils.get_base_path import get_base_path
 from modules.data_processor import process_series_data, infer_periodicity
 from modules.data_exporter import export_dataframe
 from persistence.sqlite_adapter import SQLiteAdapter
-from utils.get_base_path import get_base_path
-from utils.send_log_to_frontend import send_log_to_frontend
 
 # Inicializa o Eel
 eel.init("frontend")
@@ -35,6 +32,55 @@ def start_focus_collection(endpoint: str, filters: dict):
     Executa em uma thread separada para não bloquear a UI.
     """
     threading.Thread(target=_run_focus_collection, args=(endpoint, filters)).start()
+
+@eel.expose
+def save_focus_filters(config_data: dict):
+    """
+    Função exposta para salvar as configurações de filtros do Boletim Focus.
+    """
+    try:
+        focus_config_path = get_base_path("focus_config.yaml")
+        
+        # Carregar configuração existente
+        with open(focus_config_path, "r", encoding="utf-8") as f:
+            focus_config = yaml.safe_load(f)
+        
+        # Adicionar seção de filtros salvos se não existir
+        if "saved_filters" not in focus_config:
+            focus_config["saved_filters"] = {}
+        
+        # Salvar os filtros do usuário
+        focus_config["saved_filters"] = {
+            "endpoint": config_data.get("endpoint"),
+            "filters": config_data.get("filters", {}),
+            "last_updated": datetime.now().isoformat()
+        }
+        
+        # Salvar de volta no arquivo
+        with open(focus_config_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(focus_config, f, default_flow_style=False, allow_unicode=True)
+        
+        return {"success": True, "message": "Filtros salvos com sucesso"}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@eel.expose
+def get_focus_saved_filters():
+    """
+    Função exposta para carregar as configurações salvas do Boletim Focus.
+    """
+    try:
+        focus_config_path = get_base_path("focus_config.yaml")
+        
+        with open(focus_config_path, "r", encoding="utf-8") as f:
+            focus_config = yaml.safe_load(f)
+        
+        saved_filters = focus_config.get("saved_filters", {})
+        return {"success": True, "filters": saved_filters}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e), "filters": {}}
 
 @eel.expose
 def get_series_list():
@@ -68,11 +114,8 @@ def get_series_data(series_name: str):
     """
     Retorna os dados de uma série específica.
     """
-    config_path = get_base_path("series_config.yaml")
-    try:
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-    except FileNotFoundError:
+    config = load_series_config()
+    if not config:
         return []
 
     db_config = config.get("database", {})
@@ -96,9 +139,11 @@ def export_series(series_name: str, export_format: str):
     Exporta uma série para CSV ou Excel.
     """
     try:
-        config_path = get_base_path("series_config.yaml")
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
+        config = load_series_config()
+        if not config:
+            return {"success": False, "error": "Configuração não carregada"}
+        if series_name not in config.get("series_codes", {}):
+            return {"success": False, "error": f"Série {series_name} não encontrada na configuração"}
 
         db_config = config.get("database", {})
         db_type = db_config.get("type")
@@ -129,10 +174,11 @@ def validate_and_save_configuration(config_data: dict):
     """
     current_config_path = get_base_path("series_config.yaml")
     try:
-        with open(current_config_path, "r") as f:
-            current_config = yaml.safe_load(f)
-    except FileNotFoundError:
-        current_config = {"database": {"type": "sqlite", "db_name": "dados_bcb.db"}, "series_codes": {}}
+        current_config = load_series_config()
+        if not current_config:
+            current_config = {"database": {"type": "sqlite", "db_name": "dados_bcb.db"}, "series_codes": {}}
+    except Exception as e:
+        return {"success": False, "error": f"Erro ao carregar configuração atual: {str(e)}"}
 
     # Critério 3: Inicializar estruturas de verificação de unicidade
     unique_codes = set()
@@ -205,5 +251,5 @@ def get_current_config():
 
 if __name__ == "__main__":
     # Inicia a interface Eel
-    eel.start("index.html", size=(1000, 700), port=0)
+    eel.start("index.html", size=(1000, 700))
 

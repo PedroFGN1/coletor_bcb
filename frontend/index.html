@@ -3,10 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coletor BCB - Séries Temporais</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <title>Coletor BCB - Sistema de Coleta de Dados do Banco Central</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="../assets/icon.ico">
+    
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="css/main.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css">
 </head>
 <body>
     <div class="app-container">
@@ -16,20 +26,20 @@
                 <h2><i class="fas fa-chart-line"></i> Coletor BCB</h2>
             </div>
             <ul class="sidebar-menu">
-                <li class="menu-item active" data-section="control-panel-section">
-                    <a href="#" class="menu-link">
-                        <i class="fas fa-tachometer-alt"></i>
+                <li class="menu-item active">
+                    <a href="#" class="menu-link" data-section="control-panel-section">
+                        <i class="fas fa-play-circle"></i>
                         <span>Painel de Controle</span>
                     </a>
                 </li>
-                <li class="menu-item" data-section="data-view-section">
-                    <a href="#" class="menu-link">
-                        <i class="fas fa-chart-bar"></i>
+                <li class="menu-item">
+                    <a href="#" class="menu-link" data-section="data-view-section">
+                        <i class="fas fa-table"></i>
                         <span>Visualizar Dados</span>
                     </a>
                 </li>
-                <li class="menu-item" data-section="settings-section">
-                    <a href="#" class="menu-link">
+                <li class="menu-item">
+                    <a href="#" class="menu-link" data-section="settings-section">
                         <i class="fas fa-cog"></i>
                         <span>Configurações</span>
                     </a>
@@ -39,180 +49,123 @@
 
         <!-- Área Principal -->
         <main class="main-content">
-            <!-- Seção Painel de Controle -->
-            <section id="control-panel-section" class="content-section active">
-                <header class="content-header">
-                    <h1>Painel de Controle</h1>
-                    <p>Gerencie a coleta de séries temporais do Banco Central do Brasil</p>
-                </header>
+            <div class="content-header">
+                <h1><i class="fas fa-database"></i> Sistema de Coleta de Dados BCB</h1>
+                <p>Colete e gerencie dados econômicos do Banco Central do Brasil</p>
+            </div>
 
-                <!-- Painel de Ações -->
-                <div class="action-panel">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-play-circle"></i> Controle de Coleta</h3>
-                        </div>
-                        <div class="card-body">
-                            <p>Inicie o processo de coleta de dados das séries temporais ou do boletim focus configurados.</p>
-                            <div class="collection-buttons">
-                                <button id="start-collection-btn" class="btn btn-primary">
-                                    <i class="fas fa-download"></i>
-                                    Iniciar Coleta Séries Temporais
-                                </button>
-                                <button id="start-focus-collection-btn" class="btn btn-success">
-                                    <i class="fas fa-chart-line"></i>
-                                    Iniciar Coleta Boletim Focus
-                                </button>
-                            </div>
+            <!-- Seção: Painel de Controle -->
+            <section id="control-panel-section" class="content-section active">
+                <div class="card action-panel">
+                    <div class="card-header">
+                        <h3><i class="fas fa-rocket"></i> Iniciar Coleta</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="control-buttons">
+                            <button id="start-collection-btn" class="btn btn-primary btn-lg">
+                                <i class="fas fa-download"></i> Iniciar Coleta Séries Temporais
+                            </button>
+                            <button id="start-focus-collection-btn" class="btn btn-info btn-lg">
+                                <i class="fas fa-chart-line"></i> Iniciar Coleta Boletim Focus
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Painel de Status -->
-                <div class="status-panel">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-terminal"></i> Status e Logs</h3>
-                            <button id="clear-logs-btn" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-trash"></i>
-                                Limpar
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div id="log-container" class="log-container">
-                                <div class="log-entry welcome">
-                                    <span class="timestamp">[Sistema]</span>
-                                    <span class="message">Interface carregada. Pronto para iniciar a coleta de dados.</span>
-                                </div>
-                            </div>
-                        </div>
+                <div class="card status-panel">
+                    <div class="card-header">
+                        <h3><i class="fas fa-terminal"></i> Logs do Sistema</h3>
+                        <button id="clear-logs-btn" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-trash"></i> Limpar Logs
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="log-container" class="log-container"></div>
                     </div>
                 </div>
             </section>
 
-            <!-- Seção Visualizar Dados -->
+            <!-- Seção: Visualizar Dados -->
             <section id="data-view-section" class="content-section">
-                <header class="content-header">
-                    <h1>Visualizar Dados</h1>
-                    <p>Explore e exporte as séries temporais coletadas</p>
-                </header>
-
-                <div class="action-panel">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-database"></i> Selecionar Série</h3>
-                        </div>
-                        <div class="card-body">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-bar"></i> Visualização de Dados</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="data-controls">
                             <div class="form-group">
-                                <label for="series-select">Série Temporal:</label>
+                                <label for="series-select">
+                                    <i class="fas fa-list"></i> Selecionar Série:
+                                </label>
                                 <select id="series-select" class="form-control">
-                                    <option value="">Selecione uma série</option>
+                                    <option value="">Carregando séries...</option>
                                 </select>
                             </div>
                             <div class="export-buttons">
                                 <button id="export-csv-btn" class="btn btn-success" disabled>
-                                    <i class="fas fa-file-csv"></i>
-                                    Exportar CSV
+                                    <i class="fas fa-file-csv"></i> Exportar CSV
                                 </button>
-                                <button id="export-excel-btn" class="btn btn-success" disabled>
-                                    <i class="fas fa-file-excel"></i>
-                                    Exportar Excel
+                                <button id="export-excel-btn" class="btn btn-info" disabled>
+                                    <i class="fas fa-file-excel"></i> Exportar Excel
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="status-panel">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-table"></i> Dados da Série</h3>
-                        </div>
-                        <div class="card-body">
-                            <table id="data-table" class="display" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Valor</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Dados serão carregados aqui pelo DataTables -->
-                                </tbody>
-                            </table>
-                        </div>
+                        <table id="data-table" class="table table-striped table-hover"></table>
                     </div>
                 </div>
             </section>
 
-            <!-- Seção Configurações -->
+            <!-- Seção: Configurações -->
             <section id="settings-section" class="content-section">
-                <header class="content-header">
-                    <h1>Configurações</h1>
-                    <p>Ajuste as configurações da aplicação</p>
-                </header>
-
-                <!-- Seletor de Tipo de Configuração -->
-                <div class="action-panel">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-cogs"></i> Tipo de Configuração</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label for="config-type-select">Selecione o tipo de configuração:</label>
-                                <select id="config-type-select" class="form-control">
-                                    <option value="series-temporais">Séries Temporais</option>
-                                    <option value="boletim-focus">Boletim Focus</option>
-                                </select>
-                            </div>
+                <div class="card config-type-selector">
+                    <div class="card-header">
+                        <h3><i class="fas fa-sliders-h"></i> Tipo de Configuração</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="config-type-select">
+                                <i class="fas fa-filter"></i> Selecione o tipo de configuração:
+                            </label>
+                            <select id="config-type-select" class="form-control">
+                                <option value="series-temporais">Séries Temporais</option>
+                                <option value="boletim-focus">Boletim Focus</option>
+                            </select>
                         </div>
                     </div>
                 </div>
 
                 <!-- Configurações de Séries Temporais -->
                 <div id="series-temporais-config" class="config-section">
-                    <div class="action-panel">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-list"></i> Séries Configuradas</h3>
-                            </div>
-                            <div class="card-body">
-                                <table id="configured-series-table" class="display" style="width:100%">
-                                    <thead>
-                                        <tr>
-                                            <th>Código</th>
-                                            <th>Nome da Tabela</th>
-                                            <th>Periodicidade</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Séries configuradas serão carregadas aqui -->
-                                    </tbody>
-                                </table>
-                            </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-plus-circle"></i> Adicionar Nova Série</h3>
                         </div>
-                    </div>
-
-                    <div class="action-panel">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-plus-circle"></i> Adicionar Nova Série</h3>
-                            </div>
-                            <div class="card-body">
+                        <div class="card-body">
+                            <div class="series-form">
                                 <div class="form-group">
-                                    <label for="series-code-input">Código da Série BCB:</label>
-                                    <input type="number" id="series-code-input" class="form-control" placeholder="Ex: 433">
+                                    <label for="series-code-input">
+                                        <i class="fas fa-hashtag"></i> Código da Série:
+                                        <span class="required">*</span>
+                                    </label>
+                                    <input type="text" id="series-code-input" class="form-control" 
+                                           placeholder="Ex: 433" required>
+                                    <small class="form-text text-muted">Código numérico da série no SGS</small>
                                 </div>
                                 <div class="form-group">
-                                    <label for="base-name-input">Nome Base da Tabela:</label>
-                                    <input type="text" id="base-name-input" class="form-control" placeholder="Ex: ipca_">
-                                    <small class="form-text text-muted">O texto inserido será tratado e combinado com a periodicidade.</small>
+                                    <label for="base-name-input">
+                                        <i class="fas fa-tag"></i> Nome Base:
+                                        <span class="required">*</span>
+                                    </label>
+                                    <input type="text" id="base-name-input" class="form-control" 
+                                           placeholder="Ex: selic" required>
+                                    <small class="form-text text-muted">Nome descritivo (sem período)</small>
                                 </div>
                                 <div class="form-group">
-                                    <label for="periodicity-select">Periodicidade:</label>
-                                    <select id="periodicity-select" class="form-control">
+                                    <label for="periodicity-select">
+                                        <i class="fas fa-calendar"></i> Periodicidade:
+                                        <span class="required">*</span>
+                                    </label>
+                                    <select id="periodicity-select" class="form-control" required>
                                         <option value="">Selecione</option>
                                         <option value="diaria">Diária</option>
                                         <option value="mensal">Mensal</option>
@@ -220,46 +173,58 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Nome da Tabela Gerado:</label>
+                                    <label for="generated-table-name">
+                                        <i class="fas fa-database"></i> Nome da Tabela:
+                                    </label>
                                     <input type="text" id="generated-table-name" class="form-control" readonly>
+                                    <small class="form-text text-muted">Nome gerado automaticamente</small>
                                 </div>
-                                <button id="add-series-to-list-btn" class="btn btn-info">
-                                    <i class="fas fa-plus"></i> Adicionar à Lista
-                                </button>
-                                <div id="add-series-error-message" class="error-message"></div>
                             </div>
+                            <button id="add-series-to-list-btn" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Adicionar à Lista
+                            </button>
+                            <div id="add-series-error-message" class="status-message"></div>
                         </div>
                     </div>
 
-                    <div class="action-panel">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <button id="save-configurations-btn" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-save"></i> Salvar e Validar Configurações
-                                </button>
-                                <div id="save-config-message" class="info-message"></div>
-                            </div>
+                    <div class="card configured-series-table">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list-ul"></i> Séries Configuradas</h3>
+                        </div>
+                        <div class="card-body">
+                            <table id="configured-series-table" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">Código</th>
+                                        <th class="text-center">Nome da Tabela</th>
+                                        <th class="text-center">Periodicidade</th>
+                                        <th class="text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                            <button id="save-configurations-btn" class="btn btn-success btn-lg">
+                                <i class="fas fa-save"></i> Salvar Configurações
+                            </button>
+                            <div id="save-config-message" class="status-message"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Configurações do Boletim Focus -->
                 <div id="boletim-focus-config" class="config-section" style="display: none;">
-                    <div class="action-panel">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-chart-line"></i> Configurações do Boletim Focus</h3>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-bullseye"></i> Configurações do Boletim Focus</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="focus-filters-container" class="focus-filters-container">
+                                <!-- Conteúdo será gerado dinamicamente pelo JavaScript -->
                             </div>
-                            <div class="card-body">
-                                <p>Configure os filtros para coleta de dados do Boletim Focus do Banco Central.</p>
-                                <div id="focus-filters-container">
-                                    <!-- Filtros serão carregados dinamicamente aqui -->
-                                </div>
-                                <button id="save-focus-config-btn" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Salvar Configurações do Focus
-                                </button>
-                                <div id="save-focus-message" class="info-message"></div>
-                            </div>
+                            <button id="save-focus-config-btn" class="btn btn-success btn-lg">
+                                <i class="fas fa-save"></i> Salvar Configurações do Focus
+                            </button>
+                            <div id="save-focus-message" class="status-message"></div>
                         </div>
                     </div>
                 </div>
@@ -271,16 +236,26 @@
     <div id="loading-overlay" class="loading-overlay hidden">
         <div class="loading-spinner">
             <div class="spinner"></div>
-            <p>Coletando dados...</p>
+            <p>Processando coleta de dados...</p>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script type="text/javascript" src="/eel.js"></script>
+    <!-- jQuery e Bootstrap -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
-    <script src="js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
+    
+    <!-- Eel -->
+    <script type="text/javascript" src="/eel.js"></script>
+    
+    <!-- Aplicação Principal -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
-
 
