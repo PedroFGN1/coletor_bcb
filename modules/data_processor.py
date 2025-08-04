@@ -65,3 +65,22 @@ def process_series_data(df, series_code):
 
     return df
 
+def focus_processor(df: pd.DataFrame, endpoint: str, filters: dict) -> pd.DataFrame:
+    """
+    Processa o DataFrame do Boletim Focus, renomeando colunas e aplicando filtros.
+    Args:
+        df: DataFrame bruto do Boletim Focus
+        endpoint: Endpoint da API utilizado para coletar os dados
+        filters: Filtros aplicados na coleta dos dados
+    Returns:
+        pd.DataFrame: DataFrame processado e filtrado
+    """
+    if df.empty:
+        return pd.DataFrame()
+    
+    # Adicionar coluna de chave única para identificação com id na primeira coluna
+    df.insert(0, 'id', range(1, len(df) + 1))
+    
+
+    # Retorna DataFrame com coluna id adicionada
+    return df

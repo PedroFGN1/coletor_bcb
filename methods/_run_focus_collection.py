@@ -2,6 +2,7 @@ import yaml
 import eel
 
 from modules.data_acquirer_focus import fetch_bcb_focus
+from modules.data_processor import focus_processor
 from persistence.sqlite_adapter import SQLiteAdapter
 from utils.get_base_path import get_base_path
 from utils.send_log_to_frontend import send_log_to_frontend
@@ -61,6 +62,12 @@ def _run_focus_collection(endpoint: str, filters: dict):
                     if filters.get("Indicador"):
                         table_name += f"_{filters['Indicador'].lower().replace(' ', '_')}"
                     
+                    df_resultado = focus_processor(df_resultado, endpoint, filters)
+                    
+                    if df_resultado.empty:
+                        send_log_to_frontend("Nenhum dado válido para salvar após o processamento.")
+                        eel.collection_finished('focus')()
+                        return
                     # Salvar dados
                     adapter.save_data(table_name, df_resultado)
                     send_log_to_frontend(f"Dados salvos na tabela: {table_name}")
@@ -79,7 +86,7 @@ def _run_focus_collection(endpoint: str, filters: dict):
     
     finally:
         send_log_to_frontend("Processo de coleta do Boletim Focus finalizado.")
-        eel.collection_finished()()
+        eel.collection_finished('focus')()
 
 # Testando Executar a função diretamente
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // Elementos DOM
+    // ===================================================================
+    // ELEMENTOS DOM
+    // ===================================================================
     const menuItems = document.querySelectorAll(".menu-item");
     const contentSections = document.querySelectorAll(".content-section");
     const startCollectionBtn = document.getElementById("start-collection-btn");
@@ -23,31 +25,26 @@ document.addEventListener("DOMContentLoaded", function () {
     const configTypeSelect = document.getElementById("config-type-select");
     const seriesTemporaisConfig = document.getElementById("series-temporais-config");
     const boletimFocusConfig = document.getElementById("boletim-focus-config");
-    const saveFocusConfigBtn = document.getElementById("save-focus-config-btn");
     const saveFocusMessage = document.getElementById("save-focus-message");
+    // O botão de salvar do Focus foi removido do HTML, mas mantemos a variável para mensagens
+    // const saveFocusConfigBtn = document.getElementById("save-focus-config-btn");
 
-    // Estado da aplicação
+
+    // ===================================================================
+    // ESTADO DA APLICAÇÃO
+    // ===================================================================
     let isCollecting = false;
     let dataTable;
+    // <<< ALTERAÇÃO >>>: Variável para armazenar a configuração do Focus vinda do YAML.
+    let focusConfigData = null;
 
-    // Função auxiliar para exibir mensagens
-    function displayMessage(element, message, type) {
-        element.textContent = message;
-        element.className = `visible ${type}`;
-        
-        // Auto-ocultar após 5 segundos para mensagens de sucesso
-        if (type === 'success') {
-            setTimeout(() => {
-                element.classList.remove('visible');
-            }, 5000);
-        }
-    }
 
-    // Inicialização
+    // ===================================================================
+    // INICIALIZAÇÃO E EVENT LISTENERS
+    // ===================================================================
     setupEventListeners();
     addLog("Sistema inicializado com sucesso.", "info");
 
-    // Configuração dos event listeners
     function setupEventListeners() {
         menuItems.forEach(item => {
             item.addEventListener("click", () => handleMenuClick(item));
@@ -62,14 +59,28 @@ document.addEventListener("DOMContentLoaded", function () {
         addSeriesToListBtn.addEventListener("click", handleAddSeriesToList);
         saveConfigurationsBtn.addEventListener("click", handleSaveConfigurations);
         configTypeSelect.addEventListener("change", handleConfigTypeChange);
-        saveFocusConfigBtn.addEventListener("click", handleSaveFocusConfig);
 
         [baseNameInput, periodicitySelect].forEach(el => {
             el.addEventListener("input", updateGeneratedTableName);
         });
     }
 
-    // --- Lógica de Navegação ---
+    // Função auxiliar para exibir mensagens
+    function displayMessage(element, message, type) {
+        element.textContent = message;
+        element.className = `message-feedback visible ${type}`; // Adicionei uma classe genérica
+        
+        if (type === 'success') {
+            setTimeout(() => {
+                element.classList.remove('visible');
+            }, 5000);
+        }
+    }
+
+
+    // ===================================================================
+    // LÓGICA DE NAVEGAÇÃO
+    // ===================================================================
     function handleMenuClick(clickedItem) {
         menuItems.forEach(item => item.classList.remove("active"));
         clickedItem.classList.add("active");
@@ -83,34 +94,36 @@ document.addEventListener("DOMContentLoaded", function () {
             loadSeriesList();
         } else if (sectionId === "settings-section") {
             loadCurrentConfigurations();
-            handleConfigTypeChange(); // Garantir que a seção correta seja exibida
+            handleConfigTypeChange();
         }
     }
 
-    // --- Lógica do Painel de Controle ---
+
+    // ===================================================================
+    // LÓGICA DO PAINEL DE CONTROLE
+    // ===================================================================
     function handleStartCollection() {
         if (isCollecting) return;
-        setCollectionState(true);
-        addLog("Iniciando processo de coleta...", "info");
+        setCollectionState(true, 'series');
+        addLog("Iniciando processo de coleta de Séries Temporais...", "info");
         eel.start_data_collection();
     }
 
     function handleStartFocusCollection() {
         if (isCollecting) return;
         
-        // Verificar se há configurações salvas do Focus
+        // <<< ALTERAÇÃO >>>: A função getFocusConfigFromForm agora tem toda a lógica nova.
         const focusConfig = getFocusConfigFromForm();
-        if (!focusConfig || !focusConfig.endpoint || !focusConfig.filters.Data) {
-            addLog("Erro: Configure os filtros do Boletim Focus antes de iniciar a coleta.", "error");
+        if (!focusConfig) {
+            // A própria função getFocusConfigFromForm agora exibe o log de erro.
             return;
         }
         
-        setCollectionState(true);
+        setCollectionState(true, 'focus');
         addLog("Iniciando processo de coleta do Boletim Focus...", "info");
         addLog(`Endpoint selecionado: ${focusConfig.endpoint}`, "info");
         addLog(`Filtros aplicados: ${JSON.stringify(focusConfig.filters)}`, "info");
         
-        // Chamar função do backend com os filtros
         eel.start_focus_collection(focusConfig.endpoint, focusConfig.filters);
     }
 
@@ -119,17 +132,25 @@ document.addEventListener("DOMContentLoaded", function () {
         addLog("Logs limpos.", "info");
     }
 
-    function setCollectionState(collecting) {
+    function setCollectionState(collecting, type = 'series') {
         isCollecting = collecting;
         loadingOverlay.classList.toggle("hidden", !collecting);
-        startCollectionBtn.disabled = collecting;
-        startCollectionBtn.innerHTML = collecting ? `<i class="fas fa-spinner fa-spin"></i> Coletando...` : `<i class="fas fa-download"></i> Iniciar Coleta`;
+        if (type === 'series') {
+            startCollectionBtn.disabled = collecting;
+            startCollectionBtn.innerHTML = collecting ? `<i class="fas fa-spinner fa-spin"></i> Coletando...` : `<i class="fas fa-download"></i> Iniciar Coleta Séries Temporais`;
+        } else if (type === 'focus') {
+            startFocusCollectionBtn.disabled = collecting;
+            startFocusCollectionBtn.innerHTML = collecting ? `<i class="fas fa-spinner fa-spin"></i> Coletando...` : `<i class="fas fa-chart-line"></i> Iniciar Coleta Boletim Focus`;
+        }
     }
 
-    // --- Lógica de Visualização de Dados ---
+
+    // ===================================================================
+    // LÓGICA DE VISUALIZAÇÃO DE DADOS (SÉRIES TEMPORAIS)
+    // ===================================================================
     async function loadSeriesList() {
         const seriesList = await eel.get_series_list()();
-        seriesSelect.innerHTML = "<option value=''>Selecione uma série</option>";
+        seriesSelect.innerHTML = "<option value=''>Selecione uma Tabela</option>";
         seriesList.forEach(series => {
             const option = new Option(series, series);
             seriesSelect.add(option);
@@ -138,26 +159,56 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function handleSeriesSelectChange() {
         const seriesName = seriesSelect.value;
+
+        // Passo 1: Limpar a tabela e desabilitar botões se nada for selecionado.
         if (!seriesName) {
-            if (dataTable) dataTable.clear().draw();
+            if (dataTable) {
+                dataTable.destroy();
+                dataTable = null;
+                dataTableElement.innerHTML = ''; // Limpa completamente a estrutura da tabela
+            }
             exportCsvBtn.disabled = true;
             exportExcelBtn.disabled = true;
             return;
         }
 
+        // Passo 2: Buscar os dados do backend PRIMEIRO.
         const seriesData = await eel.get_series_data(seriesName)();
+
+        // Se a tabela já existir (de uma seleção anterior), destruí-la.
         if (dataTable) {
-            dataTable.clear();
-            dataTable.rows.add(seriesData.map(row => [row.data, row.valor]));
-            dataTable.draw();
-        } else {
-            dataTable = $(dataTableElement).DataTable({
-                data: seriesData.map(row => [row.data, row.valor]),
-                columns: [{ title: "Data" }, { title: "Valor" }],
-                responsive: true,
-                language: { url: "//cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json" }
-            });
+            dataTable.destroy();
+            dataTableElement.innerHTML = '';
         }
+
+        // Passo 3: AGORA SIM, verificar se os dados retornados são válidos.
+        if (!seriesData || seriesData.length === 0) {
+            addLog(`A tabela '${seriesName}' está vazia ou não retornou dados.`, 'warning');
+            exportCsvBtn.disabled = true;
+            exportExcelBtn.disabled = true;
+            return;
+        }
+
+        // Passo 4: Construir as colunas e os dados dinamicamente.
+        const columns = Object.keys(seriesData[0]).map(key => ({
+            title: key,
+            data: key
+        }));
+
+        const data = seriesData;
+
+        // Passo 5: Inicializar o DataTable com a nova estrutura.
+        dataTable = $(dataTableElement).DataTable({
+            data: data,
+            columns: columns,
+            responsive: true,
+            destroy: true,
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json"
+            }
+        });
+
+        // Passo 6: Habilitar os botões de exportação.
         exportCsvBtn.disabled = false;
         exportExcelBtn.disabled = false;
     }
@@ -170,20 +221,23 @@ document.addEventListener("DOMContentLoaded", function () {
             const result = await eel.export_series(seriesName, format)();
             if (result.success) {
                 addLog(`Arquivo salvo em: ${result.path}`, "info");
-                alert(`Arquivo salvo em: ${result.path}`, "info");
+                alert(`Arquivo salvo em: ${result.path}`);
             } else {
                 addLog(`Erro na exportação: ${result.error}`, "error");
-                alert(`Arquivo salvo em: ${result.path}`, "error");
+                alert(`Erro na exportação: ${result.error}`);
             }
         } catch (error) {
             addLog(`Erro ao exportar: ${error.message}`, "error");
-            alert(`Erro ao exportar: ${error.message}`, "error");
+            alert(`Erro ao exportar: ${error.message}`);
         }
     }
 
-    // --- Lógica de Configurações ---
+
+    // ===================================================================
+    // LÓGICA DE CONFIGURAÇÕES (SÉRIES TEMPORAIS)
+    // ===================================================================
     async function loadCurrentConfigurations() {
-        const config = await eel.get_current_config()();
+        const config = await eel.get_series_config()();
         configuredSeriesTableBody.innerHTML = "";
         if (config && config.series_codes) {
             for (const [code, name] of Object.entries(config.series_codes)) {
@@ -199,7 +253,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const periodicity = periodicitySelect.value;
         const generatedName = generatedTableNameInput.value;
 
-        // Limpar mensagem anterior
         addSeriesErrorMessage.classList.remove('visible');
 
         if (!code || !baseName || !periodicity) {
@@ -231,7 +284,6 @@ document.addEventListener("DOMContentLoaded", function () {
             <td class="text-center"><button class="btn btn-danger btn-sm remove-series-btn">Remover</button></td>
         `;
         
-        // Aplicar estilo visual para novas séries
         if (isNew) {
             row.classList.add("new-series-row");
         }
@@ -269,7 +321,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        // Limpar mensagem anterior
         saveConfigMessage.classList.remove('visible');
         displayMessage(saveConfigMessage, "Validando e salvando...", "info");
         
@@ -278,7 +329,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (result.success) {
             displayMessage(saveConfigMessage, "Configurações salvas com sucesso!", "success");
             
-            // Normalizar estilo após salvar - remover classe new-series-row de todas as linhas
             const newSeriesRows = configuredSeriesTableBody.querySelectorAll(".new-series-row");
             newSeriesRows.forEach(row => {
                 row.classList.remove("new-series-row");
@@ -288,49 +338,60 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function handleConfigTypeChange() {
+
+    // ===================================================================
+    // <<< INÍCIO DA NOVA LÓGICA PARA CONFIGURAÇÕES DO BOLETIM FOCUS >>>
+    // ===================================================================
+
+    async function handleConfigTypeChange() {
         const selectedType = configTypeSelect.value;
         
+        seriesTemporaisConfig.style.display = "none";
+        boletimFocusConfig.style.display = "none";
+
         if (selectedType === "series-temporais") {
             seriesTemporaisConfig.style.display = "block";
-            boletimFocusConfig.style.display = "none";
         } else if (selectedType === "boletim-focus") {
-            seriesTemporaisConfig.style.display = "none";
             boletimFocusConfig.style.display = "block";
-            loadFocusFilters(); // Carregar filtros do Focus quando a seção for exibida
+            // Carrega a configuração do YAML apenas na primeira vez que o usuário clica.
+            if (!focusConfigData) {
+                await loadAndStoreFocusConfig();
+            }
+        }
+    }
+    
+    // >>> NOVA FUNÇÃO <<<
+    // Chama o backend, pega os dados do YAML e guarda na variável `focusConfigData`.
+    async function loadAndStoreFocusConfig() {
+        addLog("Carregando configurações do Boletim Focus do backend...", "info");
+        const config = await eel.get_focus_config()(); // Chama a nova função Python
+
+        if (config && Object.keys(config).length > 0) {
+            focusConfigData = config; // Armazena os dados
+            addLog("Configurações do Focus carregadas com sucesso.", "info");
+            renderFocusForm(); // Chama a função para renderizar o formulário inicial
+        } else {
+            addLog("ERRO: Não foi possível carregar as configurações do Focus. Verifique o arquivo focus_config.yaml e os logs do backend.", "error");
+            document.getElementById("focus-filters-container").innerHTML = 
+                `<div class="error-message">Falha ao carregar configurações. Verifique o arquivo <code>focus_config.yaml</code> e o console.</div>`;
         }
     }
 
-    function handleSaveFocusConfig() {
-        const focusConfig = getFocusConfigFromForm();
-        
-        if (!focusConfig) {
-            displayMessage(saveFocusMessage, "Erro: Preencha pelo menos o endpoint e a data de início.", "error");
-            return;
-        }
-        
-        // Salvar configuração (pode ser implementado para persistir em arquivo)
-        saveFocusMessage.classList.remove('visible');
-        displayMessage(saveFocusMessage, "Configurações do Focus salvas com sucesso!", "success");
-        addLog("Configurações do Boletim Focus salvas.", "info");
-    }
-
-    function loadFocusFilters() {
-        const focusFiltersContainer = document.getElementById("focus-filters-container");
-        focusFiltersContainer.innerHTML = `
+    // >>> NOVA FUNÇÃO <<<
+    // Cria o esqueleto do formulário do Focus com o seletor de endpoints.
+    function renderFocusForm() {
+        const container = document.getElementById("focus-filters-container");
+        container.innerHTML = `
             <div class="form-group">
                 <label for="focus-endpoint-select">Endpoint do Focus:</label>
                 <select id="focus-endpoint-select" class="form-control">
                     <option value="">Selecione um endpoint</option>
-                    <option value="ExpectativasMercadoAnuais">Expectativas de Mercado Anuais</option>
-                    <option value="ExpectativaMercadoMensais">Expectativas de Mercado Mensais</option>
-                    <option value="ExpectativasMercadoTrimestrais">Expectativas de Mercado Trimestrais</option>
-                    <option value="ExpectativasMercadoTop5Anuais">Expectativas de Mercado Top 5 Anuais</option>
-                    <option value="ExpectativasMercadoTop5Mensais">Expectativas de Mercado Top 5 Mensais</option>
-                    <option value="ExpectativasMercadoSelic">Expectativas de Mercado Selic</option>
-                    <option value="ExpectativasMercadoInflacao12Meses">Expectativas de Mercado para Inflação 12 meses</option>
-                    <option value="ExpectativasMercadoInflacao24Meses">Expectativas de Mercado para Inflação 13 a 24 meses</option>
-                    <option value="ExpectativasMercadoTop5Selic">Expectativas de Mercado Selic Top 5</option>
+                    ${
+                        // Popula o select de endpoints dinamicamente
+                        Object.keys(focusConfigData).map(key => 
+                            `<option value="${key}">${focusConfigData[key].nome_amigavel}</option>`
+                        ).join('')
+                    }
                 </select>
             </div>
             <div id="dynamic-filters-container">
@@ -339,148 +400,112 @@ document.addEventListener("DOMContentLoaded", function () {
             <div class="form-group">
                 <label for="focus-data-inicio-input">Data de Início (obrigatório):</label>
                 <input type="date" id="focus-data-inicio-input" class="form-control" required>
-                <small class="form-text text-muted">Data de início da consulta no formato YYYY-MM-DD</small>
             </div>
             <div class="form-group">
                 <label for="focus-data-fim-input">Data de Fim (opcional):</label>
                 <input type="date" id="focus-data-fim-input" class="form-control">
-                <small class="form-text text-muted">Se não especificada, será usada a data atual</small>
             </div>
         `;
         
-        // Adicionar event listener para o seletor de endpoint
-        const endpointSelect = document.getElementById("focus-endpoint-select");
-        endpointSelect.addEventListener("change", loadDynamicFilters);
+        // Adiciona o event listener para quando o usuário trocar o endpoint.
+        document.getElementById("focus-endpoint-select").addEventListener("change", renderDynamicFilters);
     }
-
-    function loadDynamicFilters() {
-        const selectedEndpoint = document.getElementById("focus-endpoint-select").value;
+    
+    // <<< FUNÇÃO MODIFICADA >>>
+    // Antiga `loadDynamicFilters`, agora renderiza os filtros a partir do `focusConfigData`.
+    function renderDynamicFilters() {
+        const selectedEndpointKey = document.getElementById("focus-endpoint-select").value;
         const dynamicContainer = document.getElementById("dynamic-filters-container");
-        
-        if (!selectedEndpoint) {
+
+        if (!selectedEndpointKey) {
             dynamicContainer.innerHTML = '<p class="text-muted">Selecione um endpoint para ver os filtros disponíveis.</p>';
             return;
         }
 
-        // Definir filtros comuns baseados no endpoint selecionado
+        const endpointConfig = focusConfigData[selectedEndpointKey];
         let filtersHTML = '';
         
-        // Filtros comuns para a maioria dos endpoints
-        if (selectedEndpoint.includes("Anuais") || selectedEndpoint.includes("Mensais") || selectedEndpoint.includes("Trimestrais")) {
-            filtersHTML += `
-                <div class="form-group">
-                    <label for="focus-indicador-input">Indicador:</label>
-                    <input type="text" id="focus-indicador-input" class="form-control" placeholder="Ex: IPCA, Selic, Câmbio, PIB Total">
-                    <small class="form-text text-muted">Nome do indicador econômico</small>
-                </div>
-            `;
+        // Lista de parâmetros que são dados de RETORNO e não devem virar filtros.
+        const nonFilterParams = ['Data', 'Media', 'Mediana', 'DesvioPadrao', 'Minimo', 'Maximo', 'numeroRespondentes', 'baseCalculo', 'coeficienteVariacao'];
+
+        // Itera sobre os parâmetros definidos no YAML para o endpoint selecionado.
+        if (endpointConfig && endpointConfig.parametros) {
+            for (const paramKey in endpointConfig.parametros) {
+                // Pula os parâmetros que não são filtros de entrada.
+                if (nonFilterParams.includes(paramKey)) {
+                    continue;
+                }
+
+                const paramConfig = endpointConfig.parametros[paramKey];
+                filtersHTML += '<div class="form-group">';
+                filtersHTML += `<label for="filter-${paramKey}">${paramConfig.descricao}</label>`;
+
+                // Se o parâmetro tiver `opcoes`, cria um <select>.
+                if (paramConfig.opcoes && paramConfig.opcoes.length > 0) {
+                    filtersHTML += `<select id="filter-${paramKey}" name="${paramKey}" class="form-control">`;
+                    filtersHTML += '<option value="">Selecione uma opção</option>';
+                    paramConfig.opcoes.forEach(opt => {
+                        filtersHTML += `<option value="${opt}">${opt}</option>`;
+                    });
+                    filtersHTML += '</select>';
+                } else {
+                    // Senão, cria um <input>.
+                    const inputType = paramConfig.tipo === 'number' ? 'number' : 'text';
+                    filtersHTML += `<input type="${inputType}" id="filter-${paramKey}" name="${paramKey}" class="form-control" placeholder="${paramConfig.descricao}">`;
+                }
+                filtersHTML += '</div>';
+            }
         }
 
-        if (selectedEndpoint.includes("Anuais")) {
-            filtersHTML += `
-                <div class="form-group">
-                    <label for="focus-data-referencia-input">Ano de Referência:</label>
-                    <input type="number" id="focus-data-referencia-input" class="form-control" placeholder="Ex: 2024" min="2000" max="2030">
-                    <small class="form-text text-muted">Ano de referência da projeção</small>
-                </div>
-            `;
-        }
-
-        if (selectedEndpoint.includes("Mensais")) {
-            filtersHTML += `
-                <div class="form-group">
-                    <label for="focus-data-referencia-input">Mês/Ano de Referência:</label>
-                    <input type="text" id="focus-data-referencia-input" class="form-control" placeholder="Ex: jan/2024">
-                    <small class="form-text text-muted">Mês e ano de referência da projeção (formato mmm/yyyy)</small>
-                </div>
-            `;
-        }
-
-        if (selectedEndpoint.includes("Trimestrais")) {
-            filtersHTML += `
-                <div class="form-group">
-                    <label for="focus-data-referencia-input">Trimestre/Ano de Referência:</label>
-                    <input type="text" id="focus-data-referencia-input" class="form-control" placeholder="Ex: 1/2024">
-                    <small class="form-text text-muted">Trimestre e ano de referência da projeção (formato t/yyyy)</small>
-                </div>
-            `;
-        }
-
-        if (selectedEndpoint.includes("Selic")) {
-            filtersHTML += `
-                <div class="form-group">
-                    <label for="focus-reuniao-input">Reunião do Copom:</label>
-                    <input type="text" id="focus-reuniao-input" class="form-control" placeholder="Ex: R255">
-                    <small class="form-text text-muted">Número da reunião do Copom</small>
-                </div>
-            `;
-        }
-
-        if (selectedEndpoint.includes("Top5")) {
-            filtersHTML += `
-                <div class="form-group">
-                    <label for="focus-tipo-calculo-select">Tipo de Cálculo:</label>
-                    <select id="focus-tipo-calculo-select" class="form-control">
-                        <option value="">Selecione</option>
-                        <option value="curto prazo">Curto Prazo</option>
-                        <option value="médio prazo">Médio Prazo</option>
-                    </select>
-                    <small class="form-text text-muted">Tipo de cálculo para o grupo Top 5</small>
-                </div>
-            `;
-        }
-
-        if (selectedEndpoint.includes("Inflacao")) {
-            filtersHTML += `
-                <div class="form-group">
-                    <label for="focus-suavizada-select">Expectativa Suavizada:</label>
-                    <select id="focus-suavizada-select" class="form-control">
-                        <option value="">Selecione</option>
-                        <option value="Sim">Sim</option>
-                        <option value="Não">Não</option>
-                    </select>
-                    <small class="form-text text-muted">Indica se a expectativa é suavizada</small>
-                </div>
-            `;
-        }
-
-        dynamicContainer.innerHTML = filtersHTML || '<p class="text-muted">Nenhum filtro adicional disponível para este endpoint.</p>';
+        dynamicContainer.innerHTML = filtersHTML || '<p class="text-muted">Nenhum filtro configurável para este endpoint.</p>';
     }
 
+    // <<< FUNÇÃO MODIFICADA >>>
+    // Lê os dados do formulário dinâmico para enviar ao backend.
     function getFocusConfigFromForm() {
         const endpoint = document.getElementById("focus-endpoint-select")?.value;
         const dataInicio = document.getElementById("focus-data-inicio-input")?.value;
-        const dataFim = document.getElementById("focus-data-fim-input")?.value;
-        
+
         if (!endpoint || !dataInicio) {
+            addLog("Erro: Endpoint e Data de Início são obrigatórios para a coleta do Focus.", "error");
             return null;
         }
-        
+
         const filters = {
-            Data: dataInicio
+            Data: dataInicio,
+            DataFim: document.getElementById("focus-data-fim-input")?.value || undefined
         };
         
-        // Adicionar filtros dinâmicos baseados no endpoint
-        const indicador = document.getElementById("focus-indicador-input")?.value;
-        const dataReferencia = document.getElementById("focus-data-referencia-input")?.value;
-        const reuniao = document.getElementById("focus-reuniao-input")?.value;
-        const tipoCalculo = document.getElementById("focus-tipo-calculo-select")?.value;
-        const suavizada = document.getElementById("focus-suavizada-select")?.value;
+        // Pega os valores dos filtros que foram criados dinamicamente
+        const dynamicContainer = document.getElementById("dynamic-filters-container");
+        const dynamicInputs = dynamicContainer.querySelectorAll("input, select");
         
-        if (indicador) filters.Indicador = indicador;
-        if (dataReferencia) filters.DataReferencia = dataReferencia;
-        if (reuniao) filters.Reuniao = reuniao;
-        if (tipoCalculo) filters.tipoCalculo = tipoCalculo;
-        if (suavizada) filters.Suavizada = suavizada;
-        if (dataFim) filters.DataFim = dataFim;
-        
+        dynamicInputs.forEach(input => {
+            // Adiciona ao objeto de filtros somente se tiver um valor
+            if (input.value) {
+                filters[input.name] = input.value;
+            }
+        });
+
+        // Remove o DataFim se for undefined para não enviar um campo vazio
+        if (filters.DataFim === undefined) {
+            delete filters.DataFim;
+        }
+
         return {
             endpoint: endpoint,
             filters: filters
         };
     }
+    
+    // ===================================================================
+    // <<< FIM DA NOVA LÓGICA >>>
+    // ===================================================================
 
-    // Função para adicionar logs (chamada pelo Python)
+
+    // ===================================================================
+    // FUNÇÕES DE LOG E GLOBAIS
+    // ===================================================================
     eel.expose(add_log);
     function add_log(message, type = 'info') {
         addLog(message, type);
@@ -493,63 +518,38 @@ document.addEventListener("DOMContentLoaded", function () {
         logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="message">${message}</span>`;
         logContainer.appendChild(logEntry);
         logContainer.scrollTop = logContainer.scrollHeight;
-        // Animação de entrada
+        
         logEntry.style.opacity = '0';
-        logEntry.style.transform = 'translateY(10px)';
-        
-        setTimeout(() => {
-            logEntry.style.transition = 'all 0.3s ease';
+        requestAnimationFrame(() => {
+            logEntry.style.transition = 'opacity 0.5s ease';
             logEntry.style.opacity = '1';
-            logEntry.style.transform = 'translateY(0)';
-        }, 10);
+        });
     }
-
-    // Função para determinar o tipo de log baseado no conteúdo
-    function getLogType(message) {
-        const lowerMessage = message.toLowerCase();
-        
-        if (lowerMessage.includes('erro') || lowerMessage.includes('error')) {
-            return 'error';
-        } else if (lowerMessage.includes('aviso') || lowerMessage.includes('warning')) {
-            return 'warning';
-        } else if (lowerMessage.includes('sucesso') || lowerMessage.includes('finalizado') || lowerMessage.includes('salvos')) {
-            return 'info';
-        } else {
-            return 'info';
-        }
-    }
-
-    // Sobrescreve a função add_log para usar detecção automática de tipo
-    const originalAddLog = add_log;
-    add_log = function(message, type) {
-        if (!type) {
-            type = getLogType(message);
-        }
-        originalAddLog(message, type);
-    };
-
-    // Tratamento de erros globais
-    window.addEventListener('error', function(e) {
-        addLog(`Erro na interface: ${e.message}`, 'error');
-    });
-
-    // Previne o fechamento acidental durante a coleta
-    window.addEventListener('beforeunload', function(e) {
-        if (isCollecting) {
-            e.preventDefault();
-            e.returnValue = 'Uma coleta está em andamento. Tem certeza que deseja sair?';
-            return e.returnValue;
-        }
-    });
 
     eel.expose(collection_finished);
-    function collection_finished() {
-        setCollectionState(false);
+    function collection_finished(type) {
+        if (type === 'focus') {
+            setCollectionState(false, 'focus');
+        } else {
+            setCollectionState(false, 'series');
+        }
+        
         addLog("Processo de coleta finalizado.", "info");
         if (document.getElementById("data-view-section").classList.contains("active")) {
             loadSeriesList();
         }
     }
+
+    window.addEventListener('beforeunload', function(e) {
+        if (isCollecting) {
+            const confirmationMessage = 'Uma coleta está em andamento. Tem certeza que deseja sair?';
+            e.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+    });
+
+    window.addEventListener('error', function(e) {
+        addLog(`Erro não tratado na interface: ${e.message}`, 'error');
+    });
+
 });
-
-
