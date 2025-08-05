@@ -7,8 +7,7 @@ import threading
 from methods._run_focus_collection import _run_focus_collection
 from methods._run_series_collection import _run_series_collection
 from modules.data_acquirer_sgs import fetch_bcb_series
-from modules.data_config_focus import load_focus_config
-from modules.data_config_series import load_series_config
+from modules.data_config import ConfigManager
 from modules.data_processor import process_series_data, infer_periodicity
 from modules.data_exporter import export_dataframe
 from persistence.sqlite_adapter import SQLiteAdapter
@@ -196,7 +195,7 @@ def get_series_config():
     Retorna a configuração atual do series_config.yaml.
     """
     try:
-        return load_series_config()
+        return ConfigManager.load_series_config()
     except Exception as e:
         return {e}
 
@@ -205,7 +204,7 @@ def get_focus_config():
     """
     Retorna a configuração atual do focus_config.yaml.
     """
-    config = load_focus_config()
+    config = ConfigManager.load_focus_config()
     if config:
         return config
     else:

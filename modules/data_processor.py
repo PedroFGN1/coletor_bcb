@@ -78,9 +78,4 @@ def focus_processor(df: pd.DataFrame, endpoint: str, filters: dict) -> pd.DataFr
     if df.empty:
         return pd.DataFrame()
     
-    # Adicionar coluna de chave única para identificação com id na primeira coluna
-    df.insert(0, 'id', range(1, len(df) + 1))
-    
-
-    # Retorna DataFrame com coluna id adicionada
     return df

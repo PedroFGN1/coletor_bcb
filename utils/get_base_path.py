@@ -2,7 +2,13 @@ import os
 import sys
 
 def get_base_path(path):
-    """Retorna o caminho base para encontrar os arquivos de recurso."""
+    """
+    Retorna o caminho base para encontrar os arquivos de recurso.
+    Args:
+        path (str): O caminho relativo do arquivo a ser buscado.
+    Returns:
+        str: O caminho completo para o arquivo.
+    """
     if getattr(sys, "frozen", False):
         # Se o programa estiver "congelado" (rodando como .exe)
         # o caminho base é o diretório temporário _MEIPASS

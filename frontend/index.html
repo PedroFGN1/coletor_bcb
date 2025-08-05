@@ -59,7 +59,7 @@
                                     <i class="fas fa-download"></i>
                                     Iniciar Coleta Séries Temporais
                                 </button>
-                                <button id="start-focus-collection-btn" class="btn btn-success">
+                                <button id="start-focus-collection-btn" class="btn btn-info">
                                     <i class="fas fa-chart-line"></i>
                                     Iniciar Coleta Boletim Focus
                                 </button>
@@ -131,10 +131,7 @@
                         <div class="card-body">
                             <table id="data-table" class="display" style="width:100%">
                                 <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Valor</th>
-                                    </tr>
+                                    <!-- Cabeçalhos da tabela serão preenchidos dinamicamente -->
                                 </thead>
                                 <tbody>
                                     <!-- Dados serão carregados aqui pelo DataTables -->
@@ -251,7 +248,8 @@
                                 <h3><i class="fas fa-chart-line"></i> Configurações do Boletim Focus</h3>
                             </div>
                             <div class="card-body">
-                                <p>Configure os filtros para coleta de dados do Boletim Focus do Banco Central.</p>
+                                <p>Configure os filtros para coleta de dados do Boletim Focus do Banco Central.<br/><i class="fas fa-info-circle" style="color: red;"></i> <i>Para a consulta bem sucedida selecione o <strong
+                                ><ins>Indicador</ins></i></strong></p>
                                 <div id="focus-filters-container">
                                     <!-- Filtros serão carregados dinamicamente aqui -->
                                 </div>

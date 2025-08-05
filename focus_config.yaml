@@ -209,10 +209,6 @@ focus_endpoints:
       tipoCalculo:
         tipo: string
         descricao: "Selecione o tipo de cálculo (Curto / Médio / Longo)."
-        opcoes:
-          - C
-          - M
-          - L
       Media:
         tipo: number
         descricao: "Média das expectativas dos respondentes do grupo Top 5."
@@ -249,11 +245,7 @@ focus_endpoints:
         descricao: "Mês e ano de referência da projeção (formato 'mmm/yyyy')."
       tipoCalculo:
         tipo: string
-        descricao: "Selecione o tipo de cálculo (Curto / Médio / Longo)."
-        opcoes:
-          - C
-          - M
-          - L
+        descricao: "Tipo de cálculo (Curto / Médio / Longo)."
       Media:
         tipo: number
         descricao: "Média das expectativas dos respondentes do grupo Top 5."
@@ -277,6 +269,8 @@ focus_endpoints:
       Indicador:
         tipo: string
         descricao: "Nome do indicador (Selic)."
+        opcoes:
+          - Selic
       Data:
         tipo: string
         descricao: "Data da reunião do Copom."
@@ -425,6 +419,8 @@ focus_endpoints:
       indicador:
         tipo: string
         descricao: "Nome do indicador (Selic)."
+        opcoes:
+          - Selic
       Data:
         tipo: string
         descricao: "Data da reunião do Copom."
@@ -442,11 +438,7 @@ focus_endpoints:
           - R8
       tipoCalculo:
         tipo: integer
-        descricao: "Selecione o tipo de cálculo (Curto / Médio / Longo)."
-        opcoes:
-          - C
-          - M
-          - L
+        descricao: "Tipo de cálculo (Curto / Médio / Longo)."
       media:
         tipo: number
         descricao: "Média das expectativas para a Selic."

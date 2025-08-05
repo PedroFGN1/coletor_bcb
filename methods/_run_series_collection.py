@@ -11,8 +11,37 @@ from utils.send_log_to_frontend import send_log_to_frontend
 
 def _run_series_collection():
     """
-    Lógica principal de coleta de dados, movida para uma função separada.
+    Executa o processo principal de coleta de séries temporais do Banco Central do Brasil (BCB).
+    Este método realiza as seguintes etapas:
+    1. Envia log de início do processo para o frontend.
+    2. Carrega as configurações a partir do arquivo 'series_config.yaml'.
+    3. Inicializa o adaptador de banco de dados conforme especificado na configuração.
+    4. Para cada série definida na configuração:
+        - Obtém a última data registrada no banco de dados.
+        - Define a data de início para a coleta (após a última data ou desde 01/01/1990).
+        - Busca os dados da série via API do BCB.
+        - Processa e filtra os dados para evitar duplicidades.
+        - Salva novos registros no banco de dados.
+        - Envia logs detalhados para o frontend sobre o progresso e resultados.
+    5. Trata e reporta erros de configuração, conexão e coleta.
+    6. Encerra a conexão com o banco de dados e sinaliza o término do processo ao frontend.
+    Exceções:
+        - FileNotFoundError: Caso o arquivo de configuração não seja encontrado.
+        - ValueError: Caso a configuração do banco de dados seja inválida.
+        - Exception: Para outros erros durante a configuração, coleta ou processamento dos dados.
+    Observação:
+        Esta função depende de funções auxiliares e classes externas, como:
+        - send_log_to_frontend
+        - get_base_path
+        - yaml.safe_load
+        - SQLiteAdapter
+        - fetch_bcb_series
+        - process_series_data
+        - eel.collection_finished
+        - pandas (pd)
+        - datetime
     """
+    
     send_log_to_frontend("Iniciando processo de coleta de dados...")
     config = {}
     config_path = get_base_path("series_config.yaml")

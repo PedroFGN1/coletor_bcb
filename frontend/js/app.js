@@ -159,58 +159,64 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function handleSeriesSelectChange() {
         const seriesName = seriesSelect.value;
-
-        // Passo 1: Limpar a tabela e desabilitar botões se nada for selecionado.
-        if (!seriesName) {
-            if (dataTable) {
-                dataTable.destroy();
-                dataTable = null;
-                dataTableElement.innerHTML = ''; // Limpa completamente a estrutura da tabela
-            }
-            exportCsvBtn.disabled = true;
-            exportExcelBtn.disabled = true;
-            return;
-        }
-
-        // Passo 2: Buscar os dados do backend PRIMEIRO.
-        const seriesData = await eel.get_series_data(seriesName)();
-
-        // Se a tabela já existir (de uma seleção anterior), destruí-la.
+        
+        // Passo 1: Verificar se já existe uma tabela DataTable.
+        // Se a tabela já existe, a destruímos para garantir um estado limpo.
         if (dataTable) {
             dataTable.destroy();
-            dataTableElement.innerHTML = '';
+            dataTable = null;
         }
 
-        // Passo 3: AGORA SIM, verificar se os dados retornados são válidos.
-        if (!seriesData || seriesData.length === 0) {
-            addLog(`A tabela '${seriesName}' está vazia ou não retornou dados.`, 'warning');
+        // Limpamos o conteúdo do container da tabela, mas preservando a tag <table>
+        $(dataTableElement).empty();
+
+        // Se o usuário selecionou a opção "Selecione uma Tabela", paramos aqui.
+        if (!seriesName) {
             exportCsvBtn.disabled = true;
             exportExcelBtn.disabled = true;
             return;
         }
 
-        // Passo 4: Construir as colunas e os dados dinamicamente.
-        const columns = Object.keys(seriesData[0]).map(key => ({
-            title: key,
-            data: key
-        }));
+        try {
+            // Passo 2: Buscar os dados do backend PRIMEIRO.
+            const seriesData = await eel.get_series_data(seriesName)();
 
-        const data = seriesData;
-
-        // Passo 5: Inicializar o DataTable com a nova estrutura.
-        dataTable = $(dataTableElement).DataTable({
-            data: data,
-            columns: columns,
-            responsive: true,
-            destroy: true,
-            language: {
-                url: "//cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json"
+            // Passo 3: verificar se os dados retornados são válidos.
+            if (!seriesData || seriesData.length === 0) {
+                addLog(`A tabela '${seriesName}' está vazia ou não retornou dados.`, 'warning');
+                exportCsvBtn.disabled = true;
+                exportExcelBtn.disabled = true;
+                // Adiciona um cabeçalho vazio para indicar que a tabela foi carregada mas não tem dados.
+                $(dataTableElement).html('<thead><tr><th>A tabela está vazia.</th></tr></thead>');
+                return;
             }
-        });
 
-        // Passo 6: Habilitar os botões de exportação.
-        exportCsvBtn.disabled = false;
-        exportExcelBtn.disabled = false;
+            // Passo 4: Construir as colunas e os dados dinamicamente.
+            const columns = Object.keys(seriesData[0]).map(key => ({
+                title: key,
+                data: key
+            }));
+
+            const data = seriesData;
+
+            // Passo 5: Inicializar o DataTable com a nova estrutura.
+            dataTable = $(dataTableElement).DataTable({
+                data: data,
+                columns: columns,
+                responsive: true,
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json"
+                }
+            });
+
+            // Passo 6: Habilitar os botões de exportação.
+            exportCsvBtn.disabled = false;
+            exportExcelBtn.disabled = false;
+
+        } catch (error) {
+            addLog(`Erro ao carregar a tabela '${seriesName}': ${error.message}`, 'error');
+            console.error("Erro detalhado do DataTable:", error);
+        }
     }
 
     async function handleExport(format) {
@@ -432,7 +438,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (endpointConfig && endpointConfig.parametros) {
             for (const paramKey in endpointConfig.parametros) {
                 // Pula os parâmetros que não são filtros de entrada.
-                if (nonFilterParams.includes(paramKey)) {
+                if (nonFilterParams.some(p => p.toLowerCase() === paramKey.toLowerCase())) {
                     continue;
                 }
 
