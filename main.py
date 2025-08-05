@@ -121,14 +121,32 @@ def export_series(series_name: str, export_format: str):
 @eel.expose
 def validate_and_save_configuration(config_data: dict):
     """
-    Valida e salva a configuração de séries.
+    Valida e salva a configuração de séries do Banco Central do Brasil.
+    Esta função realiza as seguintes operações:
+    1. Carrega a configuração atual de séries a partir de um arquivo YAML.
+    2. Valida a unicidade dos códigos de série e nomes de tabela na nova configuração.
+    3. Para cada série informada:
+        - Verifica se o código e o nome da tabela são únicos.
+        - Busca dados recentes da série no BCB, conforme a periodicidade informada.
+        - Valida se a série retorna dados e se a periodicidade inferida dos dados corresponde à informada.
+    4. Atualiza e salva a configuração no arquivo YAML, caso todas as validações sejam bem-sucedidas.
+    Parâmetros:
+        config_data (dict): Dicionário contendo a configuração das séries, com as chaves:
+            - "series": Lista de dicionários, cada um contendo:
+                - "code": Código da série.
+                - "table_name": Nome da tabela para armazenar os dados.
+                - "periodicidade": Periodicidade esperada ("diaria", "mensal", "anual").
+    Retorna:
+        dict: Um dicionário indicando o sucesso ou falha da operação. Em caso de falha, inclui uma mensagem de erro.
+            - {"success": True} em caso de sucesso.
+            - {"success": False, "error": <mensagem>} em caso de erro de validação ou de escrita do arquivo.
     """
-    current_config_path = get_base_path("series_config.yaml")
+
     try:
-        with open(current_config_path, "r") as f:
-            current_config = yaml.safe_load(f)
-    except FileNotFoundError:
-        current_config = {"database": {"type": "sqlite", "db_name": "dados_bcb.db"}, "series_codes": {}}
+        current_config = ConfigManager.load_series_config()
+    except Exception as e:
+        return {"success": False, "error": f"Erro ao carregar series_config.yaml: {str(e)}"}
+        
 
     # Critério 3: Inicializar estruturas de verificação de unicidade
     unique_codes = set()
@@ -183,6 +201,7 @@ def validate_and_save_configuration(config_data: dict):
     current_config["series_codes"] = new_series_codes
 
     try:
+        current_config_path = get_base_path("series_config.yaml")
         with open(current_config_path, "w") as f:
             yaml.safe_dump(current_config, f, sort_keys=False)
         return {"success": True}
@@ -213,4 +232,3 @@ def get_focus_config():
 if __name__ == "__main__":
     # Inicia a interface Eel
     eel.start("index.html", size=(1000, 700), port=0)
-
